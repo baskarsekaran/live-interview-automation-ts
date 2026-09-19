@@ -5,6 +5,8 @@ import {
 } from '@cucumber/cucumber';
 
 import { GooglePage } from '../../pages/GooglePage';
+import path from 'path';
+import { getExcelValue } from '../../utils/ExcelReader';
 
 Given('I open the Google website', async function () {
 
@@ -20,6 +22,23 @@ When('I search for {string}', async function (searchText: string) {
   await this.googlePage.search(searchText);
 });
 
+When('I search using Excel test data', async function () {
+
+  const filePath = path.join(
+    process.cwd(),
+    'testdata',
+    'testdata.xlsx'
+  );
+
+  const searchText = await getExcelValue(
+    filePath,
+    'SearchData',
+    'A3'
+  );
+
+  await this.googlePage.search(searchText);
+});
+
 Then(
   'the search results page should contain {string}',
   async function (expectedText: string) {
@@ -27,3 +46,20 @@ Then(
     await this.googlePage.verifySearchResult(expectedText);
   }
 );
+
+Then('the search results should contain Excel test data', async function () {
+
+  const filePath = path.join(
+    process.cwd(),
+    'testdata',
+    'testdata.xlsx'
+  );
+
+  const expectedText = await getExcelValue(
+    filePath,
+    'SearchData',
+    'B3'
+  );
+
+  await this.googlePage.verifySearchResult(expectedText);
+});

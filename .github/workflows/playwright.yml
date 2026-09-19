@@ -1,20 +1,80 @@
 name: Playwright and BDD Tests
 
 on:
+
   push:
     branches: ["main"]
 
   pull_request:
     branches: ["main"]
 
+  workflow_dispatch:
+
+    inputs:
+
+      branch:
+        description: "Branch to execute"
+        required: true
+        default: "main"
+        type: string
+
+      environment:
+        description: "Test environment"
+        required: true
+        default: "qa"
+        type: choice
+        options:
+          - qa
+          - test
+          - stage
+          - uat
+
+      tag:
+        description: "Cucumber tag (leave empty to run all BDD scenarios)"
+        required: false
+        default: ""
+        type: string
+
+      workers:
+        description: "Number of parallel Playwright workers"
+        required: true
+        default: "2"
+        type: string
+
+      retries:
+        description: "Number of Playwright retries"
+        required: true
+        default: "1"
+        type: string
+
+      send_email:
+        description: "Send email notification"
+        required: true
+        default: false
+        type: boolean
+
+
 jobs:
+
   test:
+
     runs-on: ubuntu-latest
 
     steps:
 
+      # ==========================================
+      # 1. Checkout source code
+      # ==========================================
+
       - name: Checkout source code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch || github.ref_name }}
+
+
+      # ==========================================
+      # 2. Setup Node.js
+      # ==========================================
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -22,35 +82,76 @@ jobs:
           node-version: 24
           cache: npm
 
+
+      # ==========================================
+      # 3. Install dependencies
+      # ==========================================
+
       - name: Install dependencies
         run: npm ci
+
+
+      # ==========================================
+      # 4. Install Chromium
+      # ==========================================
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
-      # Normal Playwright tests
-      # Includes:
-      # - Direct UI test
-      # - POM UI test
-      # - Direct API tests
-      # - API Client tests
+
+      # ==========================================
+      # 5. Display execution parameters
+      # ==========================================
+
+      - name: Display execution parameters
+        run: |
+          echo "========================================"
+          echo "SDET AUTOMATION TEST EXECUTION"
+          echo "========================================"
+          echo "Branch      : ${{ inputs.branch || github.ref_name }}"
+          echo "Environment : ${{ inputs.environment || 'test' }}"
+          echo "Tag         : ${{ inputs.tag || 'ALL' }}"
+          echo "Workers     : ${{ inputs.workers || '2' }}"
+          echo "Retries     : ${{ inputs.retries || '1' }}"
+          echo "Email       : ${{ inputs.send_email || 'false' }}"
+          echo "========================================"
+
+
+      # ==========================================
+      # 6. Run Normal Playwright Tests
+      # ==========================================
+
       - name: Run Normal Playwright Tests
-        run: npx playwright test --project=chromium
+        run: |
+          npx playwright test \
+            --project=chromium \
+            --workers=${{ inputs.workers || '2' }} \
+            --retries=${{ inputs.retries || '1' }}
         env:
-          ENV: test
+          ENV: ${{ inputs.environment || 'test' }}
           HEADLESS: true
 
-      # Cucumber BDD tests
-      # Includes:
-      # - BDD UI with POM
-      # - BDD API with API Client
+
+      # ==========================================
+      # 7. Run Cucumber BDD Tests
+      # ==========================================
+
       - name: Run Cucumber BDD Tests
-        run: npm run bdd
+        run: |
+          if [ -n "${{ inputs.tag }}" ]; then
+            npm run bdd -- --tags "${{ inputs.tag }}"
+          else
+            npm run bdd
+          fi
         env:
-          ENV: test
+          ENV: ${{ inputs.environment || 'test' }}
           HEADLESS: true
 
-      # Upload Playwright HTML report
+
+      # ==========================================
+      # 8. Upload Playwright Report
+      # ==========================================
+
       - name: Upload Playwright Report
         if: always()
         uses: actions/upload-artifact@v4
@@ -59,11 +160,41 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-      # Upload Cucumber report + videos
-      - name: Upload Cucumber BDD Report
+
+      # ==========================================
+      # 9. Upload Cucumber Report
+      # ==========================================
+
+      - name: Upload Cucumber Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cucumber-report
           path: reports/
           retention-days: 7
+
+
+      # ==========================================
+      # 10. Email Notification
+      # ==========================================
+      #
+      # Required GitHub Secrets:
+      #
+      # SMTP_USERNAME
+      # SMTP_PASSWORD
+      # EMAIL_TO
+      #
+      # Add an email action here if email
+      # notification is required.
+      #
+      # This step is intentionally disabled
+      # until SMTP details are configured.
+      # ==========================================
+
+      - name: Email notification
+        if: always() && inputs.send_email == true
+        run: |
+          echo "Email notification requested."
+          echo "Configure SMTP_USERNAME, SMTP_PASSWORD and EMAIL_TO"
+          echo "as GitHub Secrets before enabling an SMTP email action."
+          echo "Test status: ${{ job.status }}"

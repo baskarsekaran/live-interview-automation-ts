@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-"scripts": {
-  "test": "playwright test",
-  "bdd": "cucumber-js features --require-module ts-node/register --require features/step-definitions/**/*.ts --require support/hooks.ts --format html:reports/cucumber-report.html"
-},
+  "scripts": {
+    "test": "playwright test",
+    "bdd": "cucumber-js features --require-module ts-node/register --require features/step-definitions/**/*.ts --require support/hooks.ts --format html:reports/cucumber-report.html"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -19,6 +19,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "dotenv": "^18.0.1"
+    "dotenv": "^18.0.1",
+    "exceljs": "^4.4.0"
   }
 }

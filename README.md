@@ -737,6 +737,93 @@ HEADLESS: true
 ```
 ---
 
+## Excel Test Data
+
+The project supports externalizing test data using an Excel file. This avoids hardcoding test data directly in the Cucumber feature file or step definitions.
+
+### Excel File Structure
+
+Test data is maintained in:
+
+```text
+testdata/
+└── testdata.xlsx
+```
+
+The Excel sheet is named `SearchData`.
+
+| SearchText    | ExpectedText |
+| ------------- | ------------ |
+| Selenium Java | Selenium     |
+
+* `SearchText` is used as the Google search input.
+* `ExpectedText` is used to validate the search result.
+
+### Excel Data Flow
+
+```text
+Excel
+  ↓
+ExcelReader Utility
+  ↓
+Cucumber Step Definition
+  ↓
+GooglePage
+  ↓
+Playwright
+```
+
+### Cucumber Feature
+
+The feature file does not contain hardcoded test data:
+
+```gherkin
+Feature: Google search
+
+  Scenario: Search using Excel test data
+    Given I open the Google website
+    When I search using Excel test data
+    Then the search results should contain Excel test data
+```
+
+### Excel Reader
+
+The project uses `exceljs` to read test data from Excel.
+
+Install:
+
+```powershell
+npm install exceljs
+```
+
+Example:
+
+```typescript
+const searchText = await getExcelValue(
+  filePath,
+  'SearchData',
+  'A2'
+);
+
+const expectedText = await getExcelValue(
+  filePath,
+  'SearchData',
+  'B2'
+);
+```
+
+The same test can therefore be executed with different test data by changing the Excel values without modifying the feature file or automation code.
+
+### Why Externalize Test Data?
+
+* Avoids hardcoded test data
+* Makes test data easy to maintain
+* Allows reuse of the same automation flow with different data
+* Separates test data from automation logic
+* Supports data-driven testing
+
+---
+
 # Test Design Considerations
 
 For a real production application, additional scenarios would be considered.

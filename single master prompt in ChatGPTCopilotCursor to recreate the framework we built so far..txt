@@ -826,3 +826,596 @@ p.write_text(content, encoding="utf-8")
 print(p)
 print(len(content.splitlines()), "lines")
 print(len(content), "characters")
+
+==================================================
+EXCEL TEST DATA / DATA-DRIVEN TESTING
+=====================================
+
+Add Excel-based test data support using the `exceljs` npm package.
+
+Install:
+
+```powershell
+npm install exceljs
+```
+
+Create:
+
+```text
+testdata/
+└── testdata.xlsx
+```
+
+Create an Excel sheet named:
+
+```text
+SearchData
+```
+
+Use the following structure:
+
+| SearchText    | ExpectedText |
+| ------------- | ------------ |
+| Selenium Java | Selenium     |
+
+The framework must read both values from Excel:
+
+* `SearchText` → value entered into the Google search box
+* `ExpectedText` → value used to validate the search results
+
+Create:
+
+```text
+utils/
+└── ExcelReader.ts
+```
+
+Implement a reusable Excel reader utility.
+
+The utility should:
+
+* Accept Excel file path
+* Accept sheet name
+* Accept cell address
+* Read the cell value
+* Return the value as a string
+* Throw a meaningful error if the sheet or value is not found
+
+Example usage:
+
+```typescript
+const searchText = await getExcelValue(
+  filePath,
+  'SearchData',
+  'A2'
+);
+
+const expectedText = await getExcelValue(
+  filePath,
+  'SearchData',
+  'B2'
+);
+```
+
+==================================================
+EXCEL DATA IN CUCUMBER BDD
+==========================
+
+Update the Google search Cucumber scenario so that the feature file does not contain hardcoded test data.
+
+Instead of:
+
+```gherkin
+Feature: Google search
+
+  Scenario: Search for Selenium Java
+    Given I open the Google website
+    When I search for "Selenium Java"
+    Then the search results page should contain "Selenium"
+```
+
+Use:
+
+```gherkin
+Feature: Google search
+
+  Scenario: Search using Excel test data
+    Given I open the Google website
+    When I search using Excel test data
+    Then the search results should contain Excel test data
+```
+
+The Cucumber step definitions must:
+
+1. Read `SearchText` from Excel.
+2. Pass the value to `GooglePage.search(searchText)`.
+3. Read `ExpectedText` from Excel.
+4. Pass the value to `GooglePage.verifySearchResult(expectedText)`.
+
+Architecture:
+
+```text
+Excel
+  ↓
+ExcelReader
+  ↓
+Cucumber Step Definition
+  ↓
+GooglePage
+  ↓
+Playwright
+```
+
+Do not put Excel-reading logic inside `GooglePage.ts`.
+
+Do not put Excel file paths or cell-reading logic directly inside the feature file.
+
+Keep test data, test steps and UI implementation separated.
+
+==================================================
+EXCEL TEST DATA DESIGN PRINCIPLE
+================================
+
+Use Excel only for test data, not for automation logic.
+
+The framework should demonstrate:
+
+* Test data is externalized.
+* Test logic is separated from test data.
+* The same automation flow can be reused with different Excel values.
+* Changing test data should not require changing the feature file or Page Object.
+* Excel reading should be centralized in a reusable utility.
+
+Interview explanation:
+
+"I externalized the test data into Excel so that the automation logic does not contain hardcoded test values. The Excel reader provides the input and expected values to the Cucumber step definitions, while the Page Object remains responsible only for UI interactions and validations."
+
+The final Google BDD flow should be:
+
+```text
+testdata.xlsx
+    ↓
+ExcelReader.ts
+    ↓
+google.steps.ts
+    ↓
+GooglePage.ts
+    ↓
+Playwright
+    ↓
+Google
+```
+
+==================================================
+EXCEL FILE IN GIT
+=================
+
+The Excel file contains non-sensitive test data and can be committed to Git.
+
+Do not store:
+
+* passwords
+* API tokens
+* client secrets
+* authentication credentials
+* production sensitive data
+
+in the Excel file.
+
+Sensitive configuration must use environment variables or a secure secret-management mechanism.
+
+==================================================
+GITHUB ACTIONS – PARAMETERIZED CI/CD
+====================================
+
+Create:
+
+```text
+.github/workflows/playwright.yml
+```
+
+The GitHub Actions workflow must support configurable test execution parameters instead of hardcoding them.
+
+The workflow should support the following parameters:
+
+* Branch
+* Environment
+* Cucumber tag
+* Number of parallel workers
+* Retry count
+* Automated email notification
+
+==================================================
+WORKFLOW INPUT PARAMETERS
+=========================
+
+Use GitHub Actions `workflow_dispatch` inputs.
+
+Create the following inputs:
+
+### 1. Branch
+
+Allow the user to select the branch to execute.
+
+Example:
+
+```yaml
+branch:
+  description: "Branch to execute"
+  required: true
+  default: "main"
+```
+
+The workflow should checkout the selected branch.
+
+### 2. Environment
+
+Allow the user to select the environment.
+
+Options:
+
+```text
+qa
+test
+stage
+uat
+```
+
+Example:
+
+```yaml
+environment:
+  description: "Test environment"
+  required: true
+  default: "qa"
+  type: choice
+  options:
+    - qa
+    - test
+    - stage
+    - uat
+```
+
+Pass the selected value as:
+
+```text
+ENV
+```
+
+The framework should load:
+
+```text
+config/${ENV}.env
+```
+
+### 3. Cucumber Tag
+
+Allow the user to execute selected BDD scenarios using Cucumber tags.
+
+Example:
+
+```yaml
+tag:
+  description: "Cucumber tag (example: @smoke or @regression)"
+  required: false
+  default: "@smoke"
+```
+
+The workflow should execute the selected tag.
+
+For example:
+
+```bash
+npm run bdd -- --tags "${{ inputs.tag }}"
+```
+
+The framework should support scenarios such as:
+
+```gherkin
+@smoke
+Scenario: Search using Excel test data
+```
+
+and:
+
+```gherkin
+@regression
+Scenario: Create a new post
+```
+
+If the tag input is empty, run all BDD scenarios.
+
+==================================================
+4. PARALLEL WORKERS
+===================
+
+Allow the number of Playwright workers to be configured.
+
+Example:
+
+```yaml
+workers:
+  description: "Number of parallel workers"
+  required: true
+  default: "2"
+```
+
+Run Playwright using:
+
+```bash
+npx playwright test --project=chromium --workers=${{ inputs.workers }}
+```
+
+The framework should demonstrate that parallel execution can be controlled from CI/CD without changing the test code.
+
+For Cucumber, if parallel execution is configured, use Cucumber's supported parallel execution mechanism and keep it simple.
+
+==================================================
+5. RETRY
+========
+
+Allow retry count to be configured.
+
+Example:
+
+```yaml
+retries:
+  description: "Number of retries for failed tests"
+  required: true
+  default: "1"
+```
+
+Pass the retry value to Playwright:
+
+```bash
+npx playwright test --project=chromium --workers=${{ inputs.workers }} --retries=${{ inputs.retries }}
+```
+
+For Cucumber, configure retry only if supported cleanly by the selected Cucumber version. Do not introduce unnecessary custom retry logic.
+
+Interview explanation:
+
+"I make retries configurable because retries can help with transient failures, but I don't want them to hide genuine application defects."
+
+==================================================
+6. AUTOMATED EMAIL NOTIFICATION
+===============================
+
+Add an automated email notification after test execution.
+
+The notification should be sent even when tests fail.
+
+Use:
+
+```yaml
+if: always()
+```
+
+The email should contain:
+
+* Project name
+* Branch
+* Environment
+* Cucumber tag
+* Worker count
+* Retry count
+* Playwright test result
+* BDD test result
+* GitHub Actions build number/run number
+* Link to the GitHub Actions run
+* Overall execution status
+
+Do not hardcode SMTP username/password in the workflow.
+
+Use GitHub Secrets for credentials, for example:
+
+```text
+SMTP_USERNAME
+SMTP_PASSWORD
+```
+
+Use GitHub Actions secrets/environment variables for any email credentials.
+
+If an email plugin/action is used, keep the implementation simple and document the required GitHub Secrets.
+
+The email step must run regardless of test result:
+
+```yaml
+if: always()
+```
+
+==================================================
+7. WORKFLOW TRIGGERS
+====================
+
+Support both automatic and manual execution.
+
+Automatic execution:
+
+```yaml
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+```
+
+Manual execution:
+
+```yaml
+workflow_dispatch:
+```
+
+Manual execution must expose:
+
+* branch
+* environment
+* tag
+* workers
+* retries
+* email notification
+
+==================================================
+8. CHECKOUT SELECTED BRANCH
+===========================
+
+For manual execution, checkout the selected branch.
+
+Use:
+
+```yaml
+- name: Checkout source code
+  uses: actions/checkout@v4
+  with:
+    ref: ${{ inputs.branch || github.ref_name }}
+```
+
+For push/pull-request execution, use the normal GitHub event branch.
+
+==================================================
+9. CI EXECUTION FLOW
+====================
+
+The pipeline should follow this order:
+
+```text
+Checkout selected branch
+        ↓
+Setup Node.js 24
+        ↓
+npm ci
+        ↓
+Install Chromium
+        ↓
+Display execution parameters
+        ↓
+Run Playwright UI/API tests
+        ↓
+Run Cucumber BDD tests
+        ↓
+Generate reports
+        ↓
+Upload Playwright report
+        ↓
+Upload Cucumber report
+        ↓
+Send automated email notification
+```
+
+==================================================
+10. EXECUTION PARAMETERS SUMMARY
+================================
+
+Display the selected parameters in the GitHub Actions log before test execution.
+
+Example:
+
+```text
+========================================
+SDET AUTOMATION TEST EXECUTION
+========================================
+Branch      : main
+Environment : qa
+Tag         : @smoke
+Workers     : 2
+Retries     : 1
+Email       : true
+========================================
+```
+
+==================================================
+11. REPORT ARTIFACTS
+====================
+
+Upload reports even when tests fail.
+
+Use:
+
+```yaml
+if: always()
+```
+
+Upload:
+
+```text
+playwright-report/
+reports/
+```
+
+Example artifact names:
+
+```text
+playwright-report
+cucumber-report
+```
+
+The Cucumber report should include:
+
+* Feature
+* Scenario
+* Steps
+* Pass/fail status
+* Execution details
+* Screenshot attachments for failed scenarios
+* Video attachments where available
+
+==================================================
+12. CI/CD INTERVIEW EXPLANATION
+===============================
+
+Be prepared to explain:
+
+### Why parameters?
+
+"I don't want to modify the workflow YAML or test code every time I need to run a different environment, tag, worker count or retry configuration. I expose these as CI parameters so the same pipeline can execute different test suites."
+
+### Why environment parameter?
+
+"The environment is externalized through ENV. Selecting QA loads config/qa.env, while selecting TEST loads config/test.env. The automation code remains unchanged."
+
+### Why tags?
+
+"Tags allow us to execute a focused subset such as smoke tests instead of running the complete regression suite."
+
+### Why workers?
+
+"Workers allow parallel execution to reduce execution time. The worker count can be increased depending on CI resources and test isolation."
+
+### Why retries?
+
+"Retries can help with transient failures, but I keep them configurable because excessive retries can hide genuine defects."
+
+### Why email?
+
+"Automated notification provides immediate visibility of the test result to the team without requiring them to manually check GitHub Actions."
+
+### Why upload artifacts?
+
+"Reports and failure evidence should remain available after the CI job finishes, so I upload the Playwright and Cucumber reports as GitHub Actions artifacts."
+
+==================================================
+13. IMPORTANT DESIGN PRINCIPLE
+==============================
+
+The CI/CD pipeline should control execution behavior.
+
+The test code should control test behavior.
+
+```text
+CI/CD Parameters
+      ↓
+Environment / Tag / Workers / Retries
+      ↓
+Test Execution
+      ↓
+Playwright + Cucumber
+      ↓
+Reports + Notifications
+```
+
+Do not introduce unnecessary infrastructure or custom framework layers.
+
+Keep the implementation simple enough to explain and demonstrate during a 60-minute SDET technical interview.
