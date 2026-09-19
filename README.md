@@ -622,6 +622,120 @@ For local debugging, headed execution is useful because the browser actions can 
 
 
 ---
+## BDD Installation
+
+This project uses **Cucumber.js** for BDD and **Playwright** for browser automation.
+
+### Install Cucumber.js and TypeScript support
+
+If setting up the project from scratch:
+
+```powershell
+npm install --save-dev @cucumber/cucumber ts-node typescript
+```
+
+Install Playwright:
+
+```powershell
+npm install --save-dev @playwright/test
+```
+
+Install dotenv for environment configuration:
+
+```powershell
+npm install dotenv
+```
+
+Install Chromium:
+
+```powershell
+npx.cmd playwright install chromium
+```
+
+### BDD Project Structure
+
+```text
+features/
+├── google-search.feature
+├── api.feature
+└── step-definitions/
+    ├── google.steps.ts
+    └── api.steps.ts
+
+support/
+└── hooks.ts
+```
+
+### BDD npm Script
+
+The `package.json` contains the following BDD command:
+
+```json
+"bdd": "cucumber-js features --require-module ts-node/register --require features/step-definitions/**/*.ts --require support/hooks.ts --format html:reports/cucumber-report.html"
+```
+
+### Run BDD Tests
+
+Run BDD tests in headless mode:
+
+```powershell
+npm run bdd
+```
+
+Run BDD tests in headed mode:
+
+```powershell
+$env:HEADLESS="false"
+npm run bdd
+```
+
+### View Cucumber Report
+
+After execution:
+
+```powershell
+Start-Process reports\cucumber-report.html
+```
+
+The Cucumber report is generated at:
+
+```text
+reports/cucumber-report.html
+```
+
+### Important
+
+The project runs Cucumber directly from TypeScript using:
+
+```text
+ts-node/register
+```
+
+No separate `dist` build is required to execute the BDD tests.
+
+### Environment Configuration
+
+The project currently uses:
+
+```text
+config/
+└── test.env
+```
+
+Example:
+
+```env
+UI_URL=https://www.google.com
+API_BASE_URL=https://jsonplaceholder.typicode.com
+```
+
+For CI/CD, GitHub Actions sets:
+
+```yaml
+ENV: test
+HEADLESS: true
+```
+---
 
 # Test Design Considerations
 
