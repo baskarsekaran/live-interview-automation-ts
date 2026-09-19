@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "CommonJS",
-    "moduleResolution": "Node",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "strict": true,
     "esModuleInterop": true,
     "types": ["node", "@playwright/test"],
@@ -12,6 +12,7 @@
     "pages/**/*.ts",
     "features/**/*.ts",
     "support/**/*.ts",
+    "tests/**/*.ts",
     "playwright.config.ts"
   ]
 }

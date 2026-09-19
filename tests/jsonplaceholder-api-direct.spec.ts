@@ -1,22 +1,15 @@
 import { test, expect } from '@playwright/test';
 
-test('GET post - validate response', async ({ request }) => {
+test('GET post - direct API test', async ({ request }) => {
 
-//   const response = await request.get(
-//     'https://jsonplaceholder.typicode.com/posts/1'
-//   );
+  const response = await request.get(
+    `${process.env.API_BASE_URL}/posts/1`
+  );
 
-const response = await request.get(
-  `${process.env.API_BASE_URL}/posts/1`
-);
-
-  // Validate status code
   expect(response.status()).toBe(200);
 
-  // Get response body
   const responseBody = await response.json();
 
-  // Validate response fields
   expect(responseBody.id).toBe(1);
   expect(responseBody.userId).toBe(1);
   expect(responseBody.title).not.toBe('');
@@ -24,7 +17,7 @@ const response = await request.get(
 });
 
 
-test('POST post - validate response', async ({ request }) => {
+test('POST post - direct API test', async ({ request }) => {
 
   const requestBody = {
     title: 'SDET Interview',
@@ -32,27 +25,17 @@ test('POST post - validate response', async ({ request }) => {
     userId: 1
   };
 
-//   const response = await request.post(
-//     'https://jsonplaceholder.typicode.com/posts',
-//     {
-//       data: requestBody
-//     }
-//   );
-
   const response = await request.post(
-  `${process.env.API_BASE_URL}/posts`,
-  {
-    data: requestBody
-  }
-);
+    `${process.env.API_BASE_URL}/posts`,
+    {
+      data: requestBody
+    }
+  );
 
-  // Validate status code
   expect(response.status()).toBe(201);
 
-  // Get response body
   const responseBody = await response.json();
 
-  // Validate response
   expect(responseBody.title).toBe('SDET Interview');
   expect(responseBody.body).toBe('API automation test');
   expect(responseBody.userId).toBe(1);
