@@ -1,0 +1,828 @@
+Create a complete, minimal but interview-ready SDET automation framework using Playwright + TypeScript + Cucumber.js.
+
+IMPORTANT:
+- The project is for a 60-minute live technical interview.
+- Keep the implementation simple and understandable.
+- Do not over-engineer.
+- I need to demonstrate technical judgment, test design, automation, POM, API automation, BDD, environment configuration, reporting and CI/CD.
+- Use the predefined websites only:
+  UI: https://www.google.com
+  API: https://jsonplaceholder.typicode.com
+- Use Chromium for the Playwright test execution.
+- The project must work locally on Windows PowerShell and in GitHub Actions on Ubuntu.
+- Use CommonJS.
+- Use TypeScript.
+- Do NOT use a dist/build workflow for Cucumber. Run TypeScript directly using ts-node.
+- Make all files complete and ready to copy/paste.
+
+==================================================
+1. PROJECT NAME
+==================================================
+
+live-interview-automation-ts
+
+==================================================
+2. TECHNOLOGY
+==================================================
+
+Use:
+
+- Node.js
+- TypeScript
+- Playwright
+- @playwright/test
+- Cucumber.js
+- ts-node
+- dotenv
+- GitHub Actions
+
+Use compatible versions similar to:
+
+"@cucumber/cucumber": "^13.2.1"
+"@playwright/test": "^1.63.0"
+"@types/node": "^26.6.2"
+"ts-node": "^10.9.2"
+"typescript": "^5.9.3"
+"dotenv": "^18.0.1"
+
+Use:
+
+"type": "commonjs"
+
+==================================================
+3. PROJECT STRUCTURE
+==================================================
+
+Create:
+
+live-interview-automation-ts/
+│
+├── .github/
+│   └── workflows/
+│       └── playwright.yml
+│
+├── config/
+│   ├── qa.env
+│   ├── test.env
+│   ├── stage.env
+│   └── uat.env
+│
+├── features/
+│   ├── google-search.feature
+│   ├── api.feature
+│   └── step-definitions/
+│       ├── google.steps.ts
+│       └── api.steps.ts
+│
+├── pages/
+│   ├── GooglePage.ts
+│   └── PostApiClient.ts
+│
+├── support/
+│   └── hooks.ts
+│
+├── tests/
+│   ├── google-search-direct.spec.ts
+│   ├── google-search-pom.spec.ts
+│   ├── jsonplaceholder-api-direct.spec.ts
+│   └── jsonplaceholder-api.spec.ts
+│
+├── reports/
+│
+├── playwright.config.ts
+├── package.json
+├── package-lock.json
+├── tsconfig.json
+├── .gitignore
+└── README.md
+
+==================================================
+4. ENVIRONMENT CONFIGURATION
+==================================================
+
+Create:
+
+config/qa.env
+config/test.env
+config/stage.env
+config/uat.env
+
+Each should contain:
+
+UI_URL=https://www.google.com
+API_BASE_URL=https://jsonplaceholder.typicode.com
+
+Use dotenv.
+
+In playwright.config.ts:
+
+dotenv.config({
+  path: `config/${process.env.ENV || 'qa'}.env`
+});
+
+The same environment configuration must be available to Cucumber hooks.
+
+The principle should be:
+
+"Environment changes should require configuration changes, not test-code changes."
+
+Support:
+
+ENV=qa
+ENV=test
+ENV=stage
+ENV=uat
+
+==================================================
+5. PLAYWRIGHT CONFIGURATION
+==================================================
+
+Create playwright.config.ts using defineConfig.
+
+Use Chromium as the main project.
+
+Configure:
+
+- testDir: ./tests
+- Chromium project
+- HTML reporter
+- reasonable timeout
+- screenshots on failure
+- video on failure or retain-on-failure if appropriate
+- trace on retry/failure
+- headless execution by default
+
+Keep the configuration simple.
+
+==================================================
+6. NORMAL UI TEST WITHOUT POM
+==================================================
+
+Create:
+
+tests/google-search-direct.spec.ts
+
+The test must:
+
+1. Open process.env.UI_URL
+2. Validate Google title
+3. Locate the Google search box using:
+
+textarea[name="q"], input[name="q"]
+
+4. Enter "Selenium Java"
+5. Press Enter
+6. Validate title contains "Selenium"
+
+Use Playwright expect.
+
+This test must NOT use GooglePage.ts.
+
+Purpose:
+Demonstrate simple/direct Playwright automation.
+
+==================================================
+7. UI TEST USING POM
+==================================================
+
+Create:
+
+pages/GooglePage.ts
+
+The class should contain:
+
+- Page
+- searchBox Locator
+- constructor
+- open()
+- verifyGooglePage()
+- search(searchText)
+- verifySearchResult(expectedText)
+
+Use:
+
+page.locator(
+  'textarea[name="q"], input[name="q"]'
+).first();
+
+Create:
+
+tests/google-search-pom.spec.ts
+
+The test should use:
+
+const googlePage = new GooglePage(page);
+
+Then:
+
+await googlePage.open();
+await googlePage.verifyGooglePage();
+await googlePage.search('Selenium Java');
+await googlePage.verifySearchResult('Selenium');
+
+Purpose:
+Demonstrate Page Object Model and separation of test logic from UI implementation.
+
+==================================================
+8. DIRECT API TEST WITHOUT API CLIENT
+==================================================
+
+Create:
+
+tests/jsonplaceholder-api-direct.spec.ts
+
+Use Playwright APIRequestContext through the request fixture.
+
+Create two tests.
+
+GET:
+
+GET ${process.env.API_BASE_URL}/posts/1
+
+Validate:
+
+status = 200
+id = 1
+userId = 1
+title is not empty
+body is not empty
+
+POST:
+
+POST ${process.env.API_BASE_URL}/posts
+
+Payload:
+
+{
+  "title": "SDET Interview",
+  "body": "API automation test",
+  "userId": 1
+}
+
+Validate:
+
+status = 201
+title matches
+body matches
+userId matches
+id is defined
+
+This test must NOT use PostApiClient.ts.
+
+Purpose:
+Demonstrate simple/direct API automation.
+
+==================================================
+9. API CLIENT / SERVICE OBJECT
+==================================================
+
+Create:
+
+pages/PostApiClient.ts
+
+Do NOT call this POM.
+
+Explain that POM is for UI pages and API automation is better represented by an API Client / Service Object.
+
+The class should accept APIRequestContext.
+
+Implement:
+
+getPost(postId)
+createPost(requestBody)
+verifyGetPost(response, postId)
+verifyCreatedPost(response, requestBody)
+
+Use Playwright APIRequestContext.
+
+The client should centralize API endpoints and common API operations/validations.
+
+==================================================
+10. API TEST USING API CLIENT
+==================================================
+
+Create:
+
+tests/jsonplaceholder-api.spec.ts
+
+Use:
+
+request.newContext({
+  baseURL: process.env.API_BASE_URL
+});
+
+Create PostApiClient.
+
+Test:
+
+GET post 1
+
+POST new post
+
+Reuse PostApiClient for API operations and validations.
+
+Purpose:
+Demonstrate maintainable API automation.
+
+==================================================
+11. CUCUMBER BDD UI
+==================================================
+
+Create:
+
+features/google-search.feature
+
+Content:
+
+Feature: Google search
+
+  Scenario: Search for Selenium Java
+    Given I open the Google website
+    When I search for "Selenium Java"
+    Then the search results page should contain "Selenium"
+
+Create:
+
+features/step-definitions/google.steps.ts
+
+The steps must use:
+
+this.page
+
+and:
+
+GooglePage
+
+Architecture:
+
+Feature
+  ↓
+Step Definition
+  ↓
+GooglePage
+  ↓
+Playwright
+
+Do not put locators directly into the feature file.
+
+==================================================
+12. CUCUMBER BDD API
+==================================================
+
+Create:
+
+features/api.feature
+
+Use two scenarios:
+
+Feature: JSONPlaceholder API
+
+  Scenario: Get an existing post
+    Given I have the JSONPlaceholder API
+    When I send a GET request for post 1
+    Then the response status should be 200
+    And the response should contain post 1
+
+  Scenario: Create a new post
+    Given I have a new post payload
+    When I send a POST request to the posts API
+    Then the response status should be 201
+    And the response should contain the created post
+
+Create:
+
+features/step-definitions/api.steps.ts
+
+The BDD API steps must reuse:
+
+PostApiClient.ts
+
+Architecture:
+
+Feature
+  ↓
+Step Definition
+  ↓
+PostApiClient
+  ↓
+Playwright APIRequestContext
+  ↓
+JSONPlaceholder
+
+==================================================
+13. CUCUMBER HOOKS
+==================================================
+
+Create:
+
+support/hooks.ts
+
+Requirements:
+
+- Load dotenv using selected ENV
+- Use Cucumber Before and After
+- setDefaultTimeout(30000)
+- Launch Chromium
+- Support HEADLESS environment variable
+- Default to headless
+- Create BrowserContext
+- Create Page
+- Store page on Cucumber World as this.page
+- Record video into reports/videos
+- On failed scenario, take screenshot
+- Attach screenshot to Cucumber report
+- Close context so video is finalized
+- Attach video to Cucumber report
+- Close browser
+
+Use:
+
+headless: process.env.HEADLESS !== 'false'
+
+Therefore:
+
+HEADLESS=true -> headless
+HEADLESS=false -> headed
+
+Do not create a compiled dist directory for Cucumber.
+
+==================================================
+14. CUCUMBER HTML REPORT
+==================================================
+
+In package.json add:
+
+"bdd": "cucumber-js features --require-module ts-node/register --require features/step-definitions/**/*.ts --require support/hooks.ts --format html:reports/cucumber-report.html"
+
+The BDD report must be:
+
+reports/cucumber-report.html
+
+It should include:
+
+- Feature
+- Scenario
+- Steps
+- Pass/fail
+- Execution details
+- Failed scenario screenshot
+- Video attachment
+
+==================================================
+15. PACKAGE.JSON
+==================================================
+
+Create scripts:
+
+"test": "playwright test"
+
+"bdd": "cucumber-js features --require-module ts-node/register --require features/step-definitions/**/*.ts --require support/hooks.ts --format html:reports/cucumber-report.html"
+
+Use:
+
+"type": "commonjs"
+
+Include dotenv dependency.
+
+==================================================
+16. TYPESCRIPT CONFIG
+==================================================
+
+Create root tsconfig.json.
+
+Use approximately:
+
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "strict": true,
+    "esModuleInterop": true,
+    "types": ["node", "@playwright/test"],
+    "outDir": "dist"
+  },
+  "include": [
+    "pages/**/*.ts",
+    "features/**/*.ts",
+    "support/**/*.ts",
+    "playwright.config.ts"
+  ]
+}
+
+IMPORTANT:
+Do not use the outDir/dist output for running Cucumber.
+Cucumber must continue using ts-node/register directly.
+
+==================================================
+17. GITIGNORE
+==================================================
+
+Create .gitignore:
+
+node_modules/
+reports/
+playwright-report/
+test-results/
+dist/
+.env
+.idea/
+.vscode/
+*.log
+
+Do not commit generated reports/videos.
+
+==================================================
+18. GITHUB ACTIONS
+==================================================
+
+Create:
+
+.github/workflows/playwright.yml
+
+Use:
+
+name: Playwright and BDD Tests
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+Steps:
+
+1. Checkout source code
+2. Setup Node.js 24
+3. npm ci
+4. Install Chromium with dependencies
+5. Run normal Playwright tests
+6. Run Cucumber BDD tests
+7. Upload Playwright report
+8. Upload Cucumber report
+
+Use:
+
+ENV: test
+HEADLESS: true
+
+Playwright command:
+
+npx playwright test --project=chromium
+
+BDD command:
+
+npm run bdd
+
+Upload:
+
+playwright-report/
+
+and:
+
+reports/
+
+Use actions/checkout@v4
+actions/setup-node@v4
+actions/upload-artifact@v4
+
+Set report upload to:
+
+if: always()
+
+==================================================
+19. TEST COMMANDS
+==================================================
+
+Document these commands:
+
+Install:
+
+npm ci
+
+Install browser:
+
+npx.cmd playwright install chromium
+
+All Playwright:
+
+npx.cmd playwright test --project=chromium
+
+Direct UI:
+
+npx.cmd playwright test tests/google-search-direct.spec.ts --project=chromium
+
+POM UI:
+
+npx.cmd playwright test tests/google-search-pom.spec.ts --project=chromium
+
+Direct API:
+
+npx.cmd playwright test tests/jsonplaceholder-api-direct.spec.ts --project=chromium
+
+API Client:
+
+npx.cmd playwright test tests/jsonplaceholder-api.spec.ts --project=chromium
+
+BDD:
+
+npm run bdd
+
+Playwright report:
+
+npx.cmd playwright show-report
+
+Alternative report port:
+
+npx.cmd playwright show-report --port 9324
+
+Cucumber report:
+
+Start-Process reports\cucumber-report.html
+
+Headed BDD:
+
+PowerShell:
+
+$env:HEADLESS="false"
+npm run bdd
+
+Headless BDD:
+
+$env:HEADLESS="true"
+npm run bdd
+
+Environment example:
+
+$env:ENV="test"
+npm run bdd
+
+==================================================
+20. README
+==================================================
+
+Create a complete README.md explaining:
+
+- Project purpose
+- Technology stack
+- Project structure
+- UI automation
+- Direct UI test
+- POM UI test
+- Direct API test
+- API Client test
+- BDD UI
+- BDD API
+- Why both direct and POM/API Client approaches are demonstrated
+- Environment configuration
+- Headed/headless
+- Reports
+- Screenshot/video
+- GitHub Actions
+- Installation
+- Commands
+- Test design considerations
+- Technical decisions
+- Interview talking points
+
+Include these interview explanations:
+
+Why both direct and POM/API Client?
+
+"I intentionally demonstrated both approaches. The direct test shows a simple implementation suitable for a small number of tests. The POM/API Client version separates implementation logic from test scenarios, which is more maintainable as the suite grows."
+
+Why Cucumber?
+
+"Playwright Test is sufficient for automation, but Cucumber adds a business-readable BDD layer using Given, When and Then. I would use it when business analysts, product owners or other non-technical stakeholders need readable scenarios. I would not introduce BDD unnecessarily."
+
+Why API Client instead of POM?
+
+"POM is primarily for UI pages. For API automation, I use an API Client or Service Object because there is no UI page. It centralizes endpoints and API operations and allows both normal tests and BDD step definitions to reuse the same implementation."
+
+Why environment configuration?
+
+"I don't want environment-specific values hardcoded in test cases. I externalized the UI and API base URLs so the same automation code can run against QA, TEST, STAGE or UAT."
+
+Why screenshots/videos?
+
+"I use Cucumber hooks for test lifecycle management. When a scenario fails, I capture a screenshot and attach it to the Cucumber report. I also record video for debugging. This helps investigate failures without putting screenshot logic into every step."
+
+Why Google?
+
+"The objective is not to demonstrate application complexity. It is to demonstrate working automation and appropriate technical decisions. The flow covers navigation, locator identification, interaction, synchronization and validation. In production, I would prefer a stable application under our control because public websites can change and may have CAPTCHA, localization, consent or anti-automation behavior."
+
+Why JSONPlaceholder?
+
+"JSONPlaceholder is suitable for demonstrating REST mechanics such as GET and POST, status-code validation and response-body validation. It is a mock/public API, so it doesn't represent production business rules, authentication or database validation."
+
+Closing statement:
+
+"This project demonstrates that I can understand a requirement, make appropriate automation-tool decisions, implement a working solution quickly, validate meaningful results, identify limitations and risks, and explain how I would scale the solution for a production environment."
+
+==================================================
+21. IMPORTANT DESIGN PRINCIPLES
+==================================================
+
+Keep the project minimal.
+
+Do not add unnecessary:
+
+- Selenium
+- REST Assured
+- Docker
+- Database
+- Kafka
+- Allure
+- Jenkins
+- complicated dependency injection
+- unnecessary custom framework layers
+
+The goal is to demonstrate:
+
+- Playwright
+- TypeScript
+- UI automation
+- API automation
+- POM
+- API Client
+- BDD
+- environment configuration
+- reports
+- screenshots
+- video
+- CI/CD
+- technical judgment
+
+==================================================
+22. FINAL EXPECTED TEST COVERAGE
+==================================================
+
+Normal Playwright:
+
+UI:
+- Google search direct
+- Google search POM
+
+API:
+- GET direct
+- POST direct
+- GET API Client
+- POST API Client
+
+BDD:
+
+UI:
+- Google search
+
+API:
+- GET post
+- POST post
+
+Expected concept:
+
+Normal Playwright
+├── Direct UI
+├── POM UI
+├── Direct API
+└── API Client
+
+BDD
+├── UI + POM
+└── API + API Client
+
+==================================================
+23. FINAL VALIDATION
+==================================================
+
+After generating all files:
+
+1. Run npm install/npm ci
+2. Install Chromium
+3. Run all Playwright tests
+4. Run all BDD tests
+5. Verify Cucumber HTML report is generated
+6. Verify screenshots/videos are attached/available
+7. Verify GitHub Actions YAML is valid
+8. Make sure no credentials/secrets are hardcoded
+9. Make sure reports and node_modules are ignored
+10. Explain any issue encountered and provide the exact fix.
+
+When giving the implementation, provide each file with:
+- File path
+- Complete contents
+- Exact command to create/run it where useful
+
+Do not skip any required file.
+Do not provide pseudo-code.
+Provide working TypeScript code.
+"""
+from pathlib import Path
+p = Path("/mnt/data/master_prompt_playwright_bdd_framework.txt")
+p.write_text(content, encoding="utf-8")
+print(p)
+print(len(content.splitlines()), "lines")
+print(len(content), "characters")

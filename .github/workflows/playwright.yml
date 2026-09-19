@@ -2,10 +2,10 @@ name: Playwright and BDD Tests
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   test:
@@ -28,19 +28,30 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Run Playwright tests
+      # Normal Playwright tests
+      # Includes:
+      # - Direct UI test
+      # - POM UI test
+      # - Direct API tests
+      # - API Client tests
+      - name: Run Normal Playwright Tests
         run: npx playwright test --project=chromium
         env:
           ENV: test
           HEADLESS: true
 
-      - name: Run Cucumber BDD tests
+      # Cucumber BDD tests
+      # Includes:
+      # - BDD UI with POM
+      # - BDD API with API Client
+      - name: Run Cucumber BDD Tests
         run: npm run bdd
         env:
           ENV: test
           HEADLESS: true
 
-      - name: Upload Playwright report
+      # Upload Playwright HTML report
+      - name: Upload Playwright Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -48,7 +59,8 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-      - name: Upload Cucumber BDD report
+      # Upload Cucumber report + videos
+      - name: Upload Cucumber BDD Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
