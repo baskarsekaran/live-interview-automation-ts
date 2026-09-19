@@ -571,6 +571,56 @@ npx.cmd playwright test tests/jsonplaceholder-api.spec.ts --project=chromium
 npm run bdd
 ```
 
+### Run Tests in Headed Mode
+
+#### Normal Playwright Tests
+
+To run the normal Playwright tests with the browser visible:
+
+```powershell
+npx.cmd playwright test --project=chromium --headed
+```
+
+Run only the POM UI test in headed mode:
+
+```powershell
+npx.cmd playwright test tests/google-search-pom.spec.ts --project=chromium --headed
+```
+
+Run only the direct UI test in headed mode:
+
+```powershell
+npx.cmd playwright test tests/google-search-direct.spec.ts --project=chromium --headed
+```
+
+The `--headed` option makes the browser visible during execution. No environment variable is required.
+
+#### Cucumber BDD Tests in Headed Mode
+
+Cucumber launches Playwright through `support/hooks.ts`, so headed mode is controlled using the `HEADLESS` environment variable:
+
+```powershell
+$env:HEADLESS="false"
+npm run bdd
+```
+
+For headless BDD execution:
+
+```powershell
+$env:HEADLESS="true"
+npm run bdd
+```
+
+### Execution Summary
+
+| Test Type         | Headless                                     | Headed                                                |
+| ----------------- | -------------------------------------------- | ----------------------------------------------------- |
+| Normal Playwright | `npx.cmd playwright test --project=chromium` | `npx.cmd playwright test --project=chromium --headed` |
+| Cucumber BDD      | `$env:HEADLESS="true"; npm run bdd`          | `$env:HEADLESS="false"; npm run bdd`                  |
+
+For local debugging, headed execution is useful because the browser actions can be observed directly. In CI/CD, headless execution is used for automated execution.
+
+
 ---
 
 # Test Design Considerations
