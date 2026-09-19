@@ -52,6 +52,12 @@ on:
         required: true
         default: false
         type: boolean
+      
+      email_to:
+        description: "Email recipients (comma-separated)"
+        required: false
+        default: ""
+        type: string
 
 
 jobs:
@@ -192,9 +198,11 @@ jobs:
       # ==========================================
 
       - name: Email notification
-        if: always() && inputs.send_email == true
+        if: ${{ always() && inputs.send_email == true }}
+        env:
+          EMAIL_TO: ${{ inputs.email_to }}
+          TEST_STATUS: ${{ job.status }}
         run: |
-          echo "Email notification requested."
-          echo "Configure SMTP_USERNAME, SMTP_PASSWORD and EMAIL_TO"
-          echo "as GitHub Secrets before enabling an SMTP email action."
-          echo "Test status: ${{ job.status }}"
+          echo "Email notification requested"
+          echo "Recipients: ${EMAIL_TO}"
+          echo "Test status: ${TEST_STATUS}"
