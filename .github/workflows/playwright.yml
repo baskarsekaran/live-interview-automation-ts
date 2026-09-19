@@ -202,13 +202,17 @@ jobs:
         uses: dawidd6/action-send-mail@v6
         with:
           server_address: smtp.gmail.com
-          server_port: 465
-          secure: true
+          server_port: 587
+          secure: false
+
           username: ${{ secrets.SMTP_USERNAME }}
           password: ${{ secrets.SMTP_PASSWORD }}
+
           from: "baskar10576@gmail.com"
           to: ${{ inputs.email_to }}
+
           subject: "SDET Automation Test Result - ${{ job.status }}"
+
           body: |
             SDET Automation Test Execution
 
@@ -216,3 +220,6 @@ jobs:
             Branch: ${{ inputs.branch || github.ref_name }}
             Environment: ${{ inputs.environment || 'qa' }}
             Status: ${{ job.status }}
+
+            Workflow:
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
