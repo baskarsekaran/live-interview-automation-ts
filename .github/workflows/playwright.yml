@@ -204,24 +204,12 @@ jobs:
           server_address: smtp.gmail.com
           server_port: 465
           secure: true
-
           username: ${{ secrets.SMTP_USERNAME }}
           password: ${{ secrets.SMTP_PASSWORD }}
-
-          from: ${{ secrets.SMTP_USERNAME }}
+          from: "Your Name <baskar10576@gmail.com>"
           to: ${{ inputs.email_to }}
-
-          subject: "SDET Automation Test Result - ${{ job.status }}"
-
+          subject: "SDET Test Result - ${{ job.status }}"
           body: |
-            SDET Automation Test Execution
-
-            Repository: ${{ github.repository }}
-            Branch: ${{ inputs.branch || github.ref_name }}
-            Environment: ${{ inputs.environment || 'qa' }}
-            Tag: ${{ inputs.tag || 'ALL' }}
-
-            Test Status: ${{ job.status }}
-
-            View Run:
-            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            Test execution completed.
+            Status: ${{ job.status }}
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
