@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "test": "playwright test",
-    "bdd": "cucumber-js features --require-module ts-node/register --require features/step-definitions/**/*.ts --require support/hooks.ts"
-  },
+"scripts": {
+  "test": "playwright test",
+  "bdd": "cucumber-js features --require-module ts-node/register --require features/step-definitions/**/*.ts --require support/hooks.ts --format html:reports/cucumber-report.html"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",

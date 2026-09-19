@@ -1,28 +1,15 @@
-
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
+import { GooglePage } from '../pages/GooglePage';
 
 test('Google search test', async ({ page }) => {
 
-  // 1. Open Google
-  //await page.goto('https://www.google.com');
-  await page.goto(process.env.UI_URL!);
+  const googlePage = new GooglePage(page);
 
-  // 2. Validate the page title
-  await expect(page).toHaveTitle(/Google/i);
+  await googlePage.open();
 
-  // 3. Find the search box
-  const searchBox = page.locator(
-    'textarea[name="q"], input[name="q"]'
-  ).first();
+  await googlePage.verifyGooglePage();
 
-  await expect(searchBox).toBeVisible();
+  await googlePage.search('Selenium Java');
 
-  // 4. Enter search text
-  await searchBox.fill('Selenium Java');
-
-  // 5. Submit the search
-  await searchBox.press('Enter');
-
-  // 6. Validate the search result page
-  await expect(page).toHaveTitle(/Selenium/i);
+  await googlePage.verifySearchResult('Selenium');
 });
