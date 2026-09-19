@@ -196,6 +196,14 @@ jobs:
       # This step is intentionally disabled
       # until SMTP details are configured.
       # ==========================================
+      - name: Check email configuration
+        if: ${{ always() && inputs.send_email == true }}
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASS: ${{ secrets.SMTP_PASSWORD }}
+        run: |
+          echo "SMTP username configured: ${SMTP_USER:+YES}"
+          echo "SMTP password configured: ${SMTP_PASS:+YES}"
 
       - name: Send Email Notification
         if: ${{ always() && inputs.send_email == true }}
