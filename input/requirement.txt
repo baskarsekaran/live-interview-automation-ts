@@ -1,0 +1,5 @@
+User should be able to login with valid username and password.
+
+If the username or password is invalid, an appropriate error message should be displayed.
+
+The login button should not allow submission when mandatory fields are empty.

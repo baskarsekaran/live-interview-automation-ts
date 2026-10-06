@@ -1,6 +1,11 @@
+# Node.js
+node_modules/
+
+# Environment files
+.env
+.env.*
 
 # Playwright
-node_modules/
 /test-results/
 /playwright-report/
 /blob-report/
@@ -9,3 +14,9 @@ node_modules/
 reports/
 playwright-report/
 test-results/
+
+# AI Test Agent generated runtime output
+/output/playwright-report.json
+/output/execution-result.json
+/output/failure-analysis.json
+/output/ai-test-report.json
