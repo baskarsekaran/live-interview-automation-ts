@@ -1,10 +1,12 @@
 import fs from "fs";
 import path from "path";
 
-interface TestScenario {
-  id: string;
+interface FailedTest {
   title: string;
-  type: string;
+  project?: string;
+  error: string;
+  stack?: string;
+  duration?: number;
 }
 
 interface TestReport {
@@ -20,6 +22,10 @@ interface TestReport {
     duration: string;
   };
 
+  executionEvidence?: {
+    failedTests?: FailedTest[];
+  };
+
   failureAnalysis: {
     status: string;
     failureType: string;
@@ -30,31 +36,39 @@ interface TestReport {
   };
 }
 
+function escapeHtml(value: string): string {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function generateHtmlReport() {
 
-  console.log(
-    "================================="
+  console.log("");
+  console.log("=================================");
+  console.log("HTML REPORT AGENT");
+  console.log("=================================");
+  console.log("");
+
+  const reportPath = path.join(
+    process.cwd(),
+    "output",
+    "ai-test-report.json"
   );
 
-  console.log(
-    "HTML REPORT AGENT"
+  const outputPath = path.join(
+    process.cwd(),
+    "output",
+    "ai-test-report.html"
   );
-
-  console.log(
-    "================================="
-  );
-
-  const reportPath =
-    path.join(
-      process.cwd(),
-      "output",
-      "ai-test-report.json"
-    );
 
   if (!fs.existsSync(reportPath)) {
 
     console.error(
-      "❌ ai-test-report.json not found."
+      `AI test report not found: ${reportPath}`
     );
 
     process.exit(1);
@@ -68,535 +82,674 @@ function generateHtmlReport() {
       )
     );
 
-  /*
-   * --------------------------------
-   * READ REPORT DATA
-   * --------------------------------
-   */
-
-  const overallStatus =
-    report.overallStatus || "UNKNOWN";
-
-  const summary =
-    report.summary;
-
-  const failureAnalysis =
+  const failure =
     report.failureAnalysis;
 
-  /*
-   * --------------------------------
-   * STATUS CLASS
-   * --------------------------------
-   */
+  const failedTests =
+    report.executionEvidence?.failedTests || [];
 
-  let statusClass =
-    "unknown";
-
-  if (overallStatus === "PASSED") {
-    statusClass = "passed";
-  }
-
-  if (overallStatus === "FAILED") {
-    statusClass = "failed";
-  }
-
-  /*
-   * --------------------------------
-   * BROWSER INFORMATION
-   * --------------------------------
-   *
-   * Current testReportAgent produces
-   * "None" as a string.
-   *
-   * Future versions may produce
-   * an array.
-   */
-
-  let browserHtml =
-    "";
-
-  if (
+  const affectedBrowsers =
     Array.isArray(
-      failureAnalysis.affectedBrowsers
+      failure.affectedBrowsers
     )
-  ) {
+      ? failure.affectedBrowsers.join(", ")
+      : failure.affectedBrowsers;
 
-    browserHtml =
-      failureAnalysis
-        .affectedBrowsers
+  const statusClass =
+    report.overallStatus.toLowerCase() ===
+    "passed"
+      ? "passed"
+      : "failed";
+
+  /*
+   * Browser coverage.
+   *
+   * Our current execution matrix is:
+   * Chromium + Firefox + WebKit.
+   */
+  const browsers = [
+    "Chromium",
+    "Firefox",
+    "WebKit"
+  ];
+
+  const browserCards =
+    browsers
+      .map(
+        (browser) => `
+        <div class="browser-card">
+          <div class="browser-name">
+            ${escapeHtml(browser)}
+          </div>
+          <div class="browser-status">
+            ${report.summary.failedTests === 0
+              ? "✓ PASSED"
+              : "Execution completed"}
+          </div>
+        </div>
+        `
+      )
+      .join("");
+
+  /*
+   * Generate failed test evidence.
+   */
+  let failureEvidenceHtml = "";
+
+  if (failedTests.length === 0) {
+
+    failureEvidenceHtml = `
+      <div class="success-message">
+        <div class="success-icon">✓</div>
+
+        <div>
+          <h3>No Test Failures</h3>
+
+          <p>
+            All ${report.summary.totalExecutions}
+            Playwright executions passed successfully.
+          </p>
+        </div>
+      </div>
+    `;
+
+  } else {
+
+    const failureCards =
+      failedTests
         .map(
-          browser =>
-            `<span class="browser">${browser}</span>`
+          (test, index) => {
+
+            return `
+              <div class="failure-card">
+
+                <div class="failure-header">
+
+                  <div>
+                    <span class="failure-number">
+                      Failure ${index + 1}
+                    </span>
+
+                    <h3>
+                      ${escapeHtml(test.title)}
+                    </h3>
+                  </div>
+
+                  <span class="failure-browser">
+                    ${escapeHtml(
+                      test.project || "Unknown Browser"
+                    )}
+                  </span>
+
+                </div>
+
+                <div class="failure-detail">
+
+                  <strong>Error</strong>
+
+                  <pre>${escapeHtml(
+                    test.error
+                  )}</pre>
+
+                </div>
+
+                ${
+                  test.duration !== undefined
+                    ? `
+                      <div class="failure-detail">
+
+                        <strong>Duration</strong>
+
+                        <p>
+                          ${test.duration} ms
+                        </p>
+
+                      </div>
+                    `
+                    : ""
+                }
+
+                ${
+                  test.stack
+                    ? `
+                      <details>
+
+                        <summary>
+                          Stack Trace
+                        </summary>
+
+                        <pre>${escapeHtml(
+                          test.stack
+                        )}</pre>
+
+                      </details>
+                    `
+                    : ""
+                }
+
+              </div>
+            `;
+          }
         )
         .join("");
 
-  } else {
-
-    browserHtml = `
-      <span class="browser">
-        ${
-          failureAnalysis.affectedBrowsers ||
-          "None"
-        }
-      </span>
-    `;
-  }
-
-  /*
-   * --------------------------------
-   * LOAD TEST SCENARIOS
-   * --------------------------------
-   *
-   * ai-test-report.json does not
-   * currently contain scenarios.
-   *
-   * We therefore load them directly
-   * from test-scenarios.json.
-   */
-
-  const scenariosPath =
-    path.join(
-      process.cwd(),
-      "output",
-      "test-scenarios.json"
-    );
-
-  let scenarios: TestScenario[] =
-    [];
-
-  if (
-    fs.existsSync(
-      scenariosPath
-    )
-  ) {
-
-    try {
-
-      scenarios =
-        JSON.parse(
-          fs.readFileSync(
-            scenariosPath,
-            "utf-8"
-          )
-        );
-
-    } catch (error) {
-
-      console.log(
-        "Warning: Unable to read test-scenarios.json."
-      );
-    }
-  }
-
-  /*
-   * --------------------------------
-   * SCENARIO TABLE
-   * --------------------------------
-   */
-
-  const scenarioRows =
-    scenarios.length > 0
-
-      ? scenarios
-          .map(
-            scenario => `
-              <tr>
-
-                <td>
-                  ${scenario.id}
-                </td>
-
-                <td>
-                  ${scenario.title}
-                </td>
-
-                <td>
-                  ${scenario.type}
-                </td>
-
-              </tr>
-            `
-          )
-          .join("")
-
-      : `
-          <tr>
-
-            <td colspan="3">
-              No test scenarios available.
-            </td>
-
-          </tr>
-        `;
-
-  /*
-   * --------------------------------
-   * FAILURE / SUCCESS MESSAGE
-   * --------------------------------
-   */
-
-  let analysisSection =
-    "";
-
-  if (
-    overallStatus ===
-    "PASSED"
-  ) {
-
-    analysisSection = `
-
-      <div class="success-message">
-
-        <h3>
-          ✓ No Failures Detected
-        </h3>
-
-        <p>
-          ${failureAnalysis.evidence}
-        </p>
-
+    failureEvidenceHtml = `
+      <div class="failure-count">
+        ${failedTests.length} failed execution(s)
       </div>
 
-    `;
-
-  } else {
-
-    analysisSection = `
-
-      <div class="failure">
-
-        <h3>
-          ${failureAnalysis.failureType}
-        </h3>
-
-        <p>
-
-          <strong>
-            Root Cause:
-          </strong>
-
-          ${failureAnalysis.rootCause}
-
-        </p>
-
-        <p>
-
-          <strong>
-            Evidence:
-          </strong>
-
-          ${failureAnalysis.evidence}
-
-        </p>
-
-        <p>
-
-          <strong>
-            Affected Browsers:
-          </strong>
-
-        </p>
-
-        ${browserHtml}
-
-      </div>
-
+      ${failureCards}
     `;
   }
-
-  /*
-   * --------------------------------
-   * HTML
-   * --------------------------------
-   */
 
   const html = `
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
 
 <head>
 
 <meta charset="UTF-8">
 
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0">
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+>
 
-<title>
-AI Test Agent Report
-</title>
+<title>AI Test Automation Report</title>
 
 <style>
+
+* {
+  box-sizing: border-box;
+}
 
 body {
 
   font-family:
     Arial,
+    Helvetica,
     sans-serif;
+
+  background: #f4f6f8;
 
   margin: 0;
 
-  background:
-    #f4f6f8;
+  padding: 30px;
 
-  color:
-    #222;
-}
+  color: #222;
 
-.header {
-
-  background:
-    #1f2937;
-
-  color:
-    white;
-
-  padding:
-    30px;
-}
-
-.header h1 {
-
-  margin:
-    0;
-}
-
-.status {
-
-  display:
-    inline-block;
-
-  padding:
-    10px 20px;
-
-  border-radius:
-    20px;
-
-  font-weight:
-    bold;
-
-  margin-top:
-    10px;
-}
-
-.passed {
-
-  background:
-    #dcfce7;
-
-  color:
-    #166534;
-}
-
-.failed {
-
-  background:
-    #fee2e2;
-
-  color:
-    #b91c1c;
-}
-
-.unknown {
-
-  background:
-    #e5e7eb;
-
-  color:
-    #374151;
 }
 
 .container {
 
-  padding:
-    30px;
+  max-width: 1200px;
 
-  max-width:
-    1200px;
+  margin: auto;
 
-  margin:
-    auto;
 }
+
+/* HEADER */
+
+.header {
+
+  background:
+    linear-gradient(
+      135deg,
+      #1f2937,
+      #111827
+    );
+
+  color: white;
+
+  padding: 30px;
+
+  border-radius: 12px;
+
+  margin-bottom: 20px;
+
+  box-shadow:
+    0 4px 15px
+    rgba(0, 0, 0, 0.12);
+
+}
+
+.header h1 {
+
+  margin: 0 0 8px 0;
+
+  font-size: 30px;
+
+}
+
+.header p {
+
+  margin: 0;
+
+  opacity: 0.8;
+
+}
+
+.status {
+
+  display: inline-block;
+
+  margin-top: 18px;
+
+  padding: 9px 18px;
+
+  border-radius: 20px;
+
+  font-weight: bold;
+
+  font-size: 14px;
+
+}
+
+.status.passed {
+
+  background: #dcfce7;
+
+  color: #166534;
+
+}
+
+.status.failed {
+
+  background: #fee2e2;
+
+  color: #991b1b;
+
+}
+
+/* CARDS */
 
 .cards {
 
-  display:
-    grid;
+  display: grid;
 
   grid-template-columns:
     repeat(
       auto-fit,
-      minmax(
-        180px,
-        1fr
-      )
+      minmax(170px, 1fr)
     );
 
-  gap:
-    15px;
+  gap: 15px;
 
-  margin-top:
-    25px;
+  margin-bottom: 20px;
+
 }
 
 .card {
 
-  background:
-    white;
+  background: white;
 
-  padding:
-    20px;
+  padding: 20px;
 
-  border-radius:
-    10px;
+  border-radius: 10px;
 
   box-shadow:
     0 2px 8px
-    rgba(
-      0,
-      0,
-      0,
-      0.08
-    );
+    rgba(0, 0, 0, 0.08);
+
 }
 
 .card h3 {
 
-  margin-top:
-    0;
+  margin-top: 0;
 
-  color:
-    #6b7280;
+  color: #64748b;
+
+  font-size: 13px;
+
+  text-transform: uppercase;
+
 }
 
-.number {
+.card .value {
 
-  font-size:
-    30px;
+  font-size: 28px;
 
-  font-weight:
-    bold;
+  font-weight: bold;
+
 }
+
+/* SECTION */
 
 .section {
 
-  background:
-    white;
+  background: white;
 
-  padding:
-    25px;
+  padding: 25px;
 
-  margin-top:
-    25px;
+  border-radius: 10px;
 
-  border-radius:
-    10px;
+  margin-bottom: 20px;
 
   box-shadow:
     0 2px 8px
-    rgba(
-      0,
-      0,
-      0,
-      0.08
+    rgba(0, 0, 0, 0.08);
+
+}
+
+.section h2 {
+
+  margin-top: 0;
+
+}
+
+/* AI BADGE */
+
+.ai-badge {
+
+  display: inline-block;
+
+  background: #ede9fe;
+
+  color: #6d28d9;
+
+  padding: 5px 10px;
+
+  border-radius: 15px;
+
+  font-size: 12px;
+
+  font-weight: bold;
+
+  margin-bottom: 10px;
+
+}
+
+/* ANALYSIS */
+
+.analysis-grid {
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(280px, 1fr)
     );
+
+  gap: 20px;
+
 }
 
-table {
+.analysis-box {
 
-  width:
-    100%;
+  padding: 18px;
 
-  border-collapse:
-    collapse;
+  border-radius: 8px;
+
+  background: #f8fafc;
+
+  border: 1px solid #e2e8f0;
+
 }
 
-th,
-td {
+.analysis-box h3 {
 
-  padding:
-    12px;
+  margin-top: 0;
 
-  border-bottom:
-    1px solid #ddd;
+  font-size: 15px;
 
-  text-align:
-    left;
+  color: #475569;
+
 }
 
-th {
+.analysis-box p {
 
-  background:
-    #f3f4f6;
+  line-height: 1.6;
+
 }
 
-.browser {
+/* BROWSERS */
 
-  display:
-    inline-block;
+.browser-grid {
 
-  background:
-    #e5e7eb;
+  display: grid;
 
-  padding:
-    6px 12px;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(180px, 1fr)
+    );
 
-  border-radius:
-    15px;
+  gap: 15px;
 
-  margin-right:
-    8px;
 }
 
-.failure {
+.browser-card {
 
-  border-left:
-    5px solid #dc2626;
+  background: #f8fafc;
 
-  padding-left:
-    20px;
+  border: 1px solid #e2e8f0;
+
+  border-radius: 8px;
+
+  padding: 18px;
+
 }
+
+.browser-name {
+
+  font-size: 18px;
+
+  font-weight: bold;
+
+  margin-bottom: 8px;
+
+}
+
+.browser-status {
+
+  color: #166534;
+
+  font-weight: bold;
+
+}
+
+/* SUCCESS */
 
 .success-message {
 
-  border-left:
-    5px solid #16a34a;
+  display: flex;
 
-  background:
-    #f0fdf4;
+  align-items: center;
 
-  padding:
-    20px;
+  gap: 15px;
 
-  border-radius:
-    8px;
+  background: #f0fdf4;
+
+  border: 1px solid #bbf7d0;
+
+  padding: 20px;
+
+  border-radius: 8px;
+
 }
 
-.recommendation {
+.success-icon {
 
-  background:
-    #fff7ed;
+  font-size: 30px;
 
-  padding:
-    15px;
+  color: #16a34a;
 
-  border-radius:
-    8px;
+  font-weight: bold;
+
 }
+
+.success-message h3 {
+
+  margin: 0 0 5px 0;
+
+}
+
+.success-message p {
+
+  margin: 0;
+
+  color: #475569;
+
+}
+
+/* FAILURE */
+
+.failure-count {
+
+  margin-bottom: 15px;
+
+  color: #991b1b;
+
+  font-weight: bold;
+
+}
+
+.failure-card {
+
+  border: 1px solid #fecaca;
+
+  background: #fffafa;
+
+  border-radius: 8px;
+
+  padding: 20px;
+
+  margin-bottom: 15px;
+
+}
+
+.failure-header {
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: flex-start;
+
+  gap: 15px;
+
+  margin-bottom: 15px;
+
+}
+
+.failure-header h3 {
+
+  margin: 5px 0 0 0;
+
+}
+
+.failure-number {
+
+  font-size: 12px;
+
+  font-weight: bold;
+
+  color: #991b1b;
+
+  text-transform: uppercase;
+
+}
+
+.failure-browser {
+
+  background: #fee2e2;
+
+  color: #991b1b;
+
+  padding: 6px 10px;
+
+  border-radius: 15px;
+
+  font-size: 12px;
+
+  font-weight: bold;
+
+}
+
+.failure-detail {
+
+  margin-top: 15px;
+
+}
+
+.failure-detail strong {
+
+  display: block;
+
+  margin-bottom: 8px;
+
+  color: #475569;
+
+}
+
+pre {
+
+  background: #111827;
+
+  color: #e5e7eb;
+
+  padding: 15px;
+
+  border-radius: 6px;
+
+  overflow-x: auto;
+
+  white-space: pre-wrap;
+
+  word-break: break-word;
+
+  font-size: 13px;
+
+  line-height: 1.5;
+
+}
+
+details {
+
+  margin-top: 15px;
+
+}
+
+summary {
+
+  cursor: pointer;
+
+  font-weight: bold;
+
+  color: #475569;
+
+}
+
+/* FOOTER */
 
 .footer {
 
-  text-align:
-    center;
+  text-align: center;
 
-  color:
-    #6b7280;
+  color: #64748b;
 
-  margin-top:
-    30px;
+  font-size: 13px;
 
-  padding-bottom:
-    30px;
+  padding: 20px;
+
+}
+
+@media (max-width: 700px) {
+
+  body {
+    padding: 15px;
+  }
+
+  .header h1 {
+    font-size: 24px;
+  }
+
+  .failure-header {
+    flex-direction: column;
+  }
+
 }
 
 </style>
@@ -605,163 +758,123 @@ th {
 
 <body>
 
-<div class="header">
+<div class="container">
 
-  <h1>
-    AI Test Agent
-  </h1>
+  <!-- HEADER -->
 
-  <p>
-    Automated QA Intelligence Report
-  </p>
+  <div class="header">
 
-  <div class="status ${statusClass}">
+    <h1>
+      AI Test Automation Report
+    </h1>
 
-    ${overallStatus}
+    <p>
+      Gemini + Playwright QA Automation Pipeline
+    </p>
+
+    <div class="status ${statusClass}">
+
+      ${escapeHtml(
+        report.overallStatus
+      )}
+
+    </div>
 
   </div>
-
-</div>
-
-
-<div class="container">
 
 
   <!-- SUMMARY -->
 
   <div class="cards">
 
-
     <div class="card">
 
-      <h3>
-        Test Scenarios
-      </h3>
+      <h3>Total Scenarios</h3>
 
-      <div class="number">
-
-        ${summary.totalScenarios}
-
+      <div class="value">
+        ${report.summary.totalScenarios}
       </div>
 
     </div>
 
-
     <div class="card">
 
-      <h3>
-        Positive
-      </h3>
+      <h3>Positive Scenarios</h3>
 
-      <div class="number">
-
-        ${summary.positiveScenarios}
-
+      <div class="value">
+        ${report.summary.positiveScenarios}
       </div>
 
     </div>
 
-
     <div class="card">
 
-      <h3>
-        Negative
-      </h3>
+      <h3>Negative / Validation</h3>
 
-      <div class="number">
-
-        ${summary.negativeScenarios}
-
+      <div class="value">
+        ${report.summary.negativeScenarios}
       </div>
 
     </div>
 
-
     <div class="card">
 
-      <h3>
-        Executions
-      </h3>
+      <h3>Total Executions</h3>
 
-      <div class="number">
-
-        ${summary.totalExecutions}
-
+      <div class="value">
+        ${report.summary.totalExecutions}
       </div>
 
     </div>
 
-
     <div class="card">
 
-      <h3>
-        Passed
-      </h3>
+      <h3>Passed</h3>
 
-      <div class="number">
-
-        ${summary.passedTests}
-
+      <div class="value">
+        ${report.summary.passedTests}
       </div>
 
     </div>
 
-
     <div class="card">
 
-      <h3>
-        Failed
-      </h3>
+      <h3>Failed</h3>
 
-      <div class="number">
-
-        ${summary.failedTests}
-
+      <div class="value">
+        ${report.summary.failedTests}
       </div>
 
     </div>
 
+    <div class="card">
+
+      <h3>Duration</h3>
+
+      <div class="value">
+        ${escapeHtml(
+          report.summary.duration
+        )}
+      </div>
+
+    </div>
 
   </div>
 
 
-  <!-- TEST SCENARIOS -->
+  <!-- BROWSER COVERAGE -->
 
   <div class="section">
 
     <h2>
-      Generated Test Scenarios
+      Browser Coverage
     </h2>
 
-    <table>
+    <div class="browser-grid">
 
-      <thead>
+      ${browserCards}
 
-        <tr>
-
-          <th>
-            ID
-          </th>
-
-          <th>
-            Scenario
-          </th>
-
-          <th>
-            Type
-          </th>
-
-        </tr>
-
-      </thead>
-
-      <tbody>
-
-        ${scenarioRows}
-
-      </tbody>
-
-    </table>
+    </div>
 
   </div>
 
@@ -770,11 +883,115 @@ th {
 
   <div class="section">
 
+    <span class="ai-badge">
+      GEMINI AI ANALYSIS
+    </span>
+
     <h2>
       Failure Analysis
     </h2>
 
-    ${analysisSection}
+    <div class="analysis-grid">
+
+      <div class="analysis-box">
+
+        <h3>
+          Analysis Status
+        </h3>
+
+        <p>
+          ${escapeHtml(
+            failure.status
+          )}
+        </p>
+
+      </div>
+
+      <div class="analysis-box">
+
+        <h3>
+          Failure Type
+        </h3>
+
+        <p>
+          ${escapeHtml(
+            failure.failureType
+          )}
+        </p>
+
+      </div>
+
+      <div class="analysis-box">
+
+        <h3>
+          Affected Browsers
+        </h3>
+
+        <p>
+          ${escapeHtml(
+            affectedBrowsers
+          )}
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ROOT CAUSE -->
+
+  <div class="section">
+
+    <div class="analysis-grid">
+
+      <div class="analysis-box">
+
+        <h3>
+          Root Cause
+        </h3>
+
+        <p>
+          ${escapeHtml(
+            failure.rootCause
+          )}
+        </p>
+
+      </div>
+
+      <div class="analysis-box">
+
+        <h3>
+          Evidence
+        </h3>
+
+        <p>
+          ${escapeHtml(
+            failure.evidence
+          )}
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- EXECUTION EVIDENCE -->
+
+  <div class="section">
+
+    <span class="ai-badge">
+      PLAYWRIGHT EXECUTION EVIDENCE
+    </span>
+
+    <h2>
+      Test Execution Details
+    </h2>
+
+    ${failureEvidenceHtml}
 
   </div>
 
@@ -783,87 +1000,34 @@ th {
 
   <div class="section">
 
+    <span class="ai-badge">
+      AI RECOMMENDATION
+    </span>
+
     <h2>
       Recommended Action
     </h2>
 
-    <div class="recommendation">
-
-      ${failureAnalysis.recommendation}
-
-    </div>
-
-  </div>
-
-
-  <!-- EXECUTION -->
-
-  <div class="section">
-
-    <h2>
-      Execution Summary
-    </h2>
-
     <p>
-
-      <strong>
-        Status:
-      </strong>
-
-      ${overallStatus}
-
-    </p>
-
-    <p>
-
-      <strong>
-        Total Executions:
-      </strong>
-
-      ${summary.totalExecutions}
-
-    </p>
-
-    <p>
-
-      <strong>
-        Passed:
-      </strong>
-
-      ${summary.passedTests}
-
-    </p>
-
-    <p>
-
-      <strong>
-        Failed:
-      </strong>
-
-      ${summary.failedTests}
-
-    </p>
-
-    <p>
-
-      <strong>
-        Duration:
-      </strong>
-
-      ${summary.duration}
-
+      ${escapeHtml(
+        failure.recommendation
+      )}
     </p>
 
   </div>
 
+
+  <!-- FOOTER -->
 
   <div class="footer">
 
-    AI Test Agent •
-    Automated QA Intelligence
+    Generated by AI Test Automation Pipeline
+
+    <br>
+
+    Gemini + Playwright + TypeScript
 
   </div>
-
 
 </div>
 
@@ -872,19 +1036,6 @@ th {
 </html>
 `;
 
-  /*
-   * --------------------------------
-   * SAVE HTML
-   * --------------------------------
-   */
-
-  const outputPath =
-    path.join(
-      process.cwd(),
-      "output",
-      "ai-test-report.html"
-    );
-
   fs.writeFileSync(
     outputPath,
     html,
@@ -892,16 +1043,17 @@ th {
   );
 
   console.log(
-    "\nHTML report generated successfully."
+    "HTML report generated successfully."
   );
 
-  console.log(
-    "Report location:"
-  );
+  console.log("");
 
   console.log(
-    outputPath
+    `Output: ${outputPath}`
   );
+
+  console.log("");
+
 }
 
 generateHtmlReport();

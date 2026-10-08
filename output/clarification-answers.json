@@ -1,0 +1,9 @@
+{
+  "mode": "CI_APPROVED_ANSWERS",
+  "answers": [
+    "Username and password do not match any user in this service",
+    "The login button remains enabled. When the user clicks it with either the username or password empty, the application displays a mandatory-field validation error.",
+    "No. There are no specific password complexity requirements such as minimum length, special characters, numbers, or uppercase/lowercase rules specified for this test. Password complexity testing is out of scope.",
+    "No. There is no account lockout or rate-limiting mechanism after multiple failed login attempts. Account lockout testing is out of scope."
+  ]
+}

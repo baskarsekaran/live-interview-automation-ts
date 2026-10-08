@@ -1,0 +1,24 @@
+{
+  "application": {
+    "name": "SauceDemo",
+    "baseUrl": "https://www.saucedemo.com"
+  },
+  "login": {
+    "validUsername": "standard_user",
+    "validPassword": "secret_sauce",
+    "invalidUsername": "invalid_user",
+    "invalidPassword": "invalid_password"
+  },
+  "locators": {
+    "username": "[data-test=\"username\"]",
+    "password": "[data-test=\"password\"]",
+    "loginButton": "[data-test=\"login-button\"]",
+    "errorMessage": "[data-test=\"error\"]",
+    "productsTitle": "[data-test=\"title\"]"
+  },
+  "expected": {
+    "successUrl": "**/inventory.html",
+    "productsTitle": "Products",
+    "invalidCredentialsMessage": "Username and password do not match any user in this service"
+  }
+}

@@ -1,4 +1,4 @@
-name: Playwright and BDD Tests
+name: Playwright and AI QA Pipeline
 
 on:
 
@@ -52,7 +52,7 @@ on:
         required: true
         default: false
         type: boolean
-      
+
       email_to:
         description: "Email recipients (comma-separated)"
         required: false
@@ -98,15 +98,31 @@ jobs:
 
 
       # ==========================================
-      # 4. Install Chromium
+      # 4. Install all Playwright browsers
       # ==========================================
 
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
 
 
       # ==========================================
-      # 5. Display execution parameters
+      # 5. Configure Gemini API
+      # ==========================================
+
+      - name: Configure Gemini API
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "ERROR: GEMINI_API_KEY GitHub Secret is not configured."
+            exit 1
+          fi
+
+          echo "Gemini API key configured successfully."
+
+
+      # ==========================================
+      # 6. Display execution parameters
       # ==========================================
 
       - name: Display execution parameters
@@ -119,15 +135,50 @@ jobs:
           echo "Tag         : ${{ inputs.tag || 'ALL' }}"
           echo "Workers     : ${{ inputs.workers || '2' }}"
           echo "Retries     : ${{ inputs.retries || '1' }}"
-          echo "Email       : ${{ inputs.send_email || 'false' }}"
           echo "========================================"
 
 
       # ==========================================
-      # 6. Run Normal Playwright Tests
+      # 7. Run AI QA Pipeline
+      # ==========================================
+
+      - name: Run AI QA Pipeline
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ENV: ${{ inputs.environment || 'test' }}
+          HEADLESS: true
+        run: |
+          npx ts-node agents/qaPipelineAgent.ts
+
+
+      # ==========================================
+      # 8. Upload AI QA Pipeline artifacts
+      # ==========================================
+
+      - name: Upload AI QA Pipeline artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-qa-pipeline-report
+          path: |
+            output/requirement-analysis.json
+            output/clarification-answers.json
+            output/test-scenarios.json
+            output/execution-result.json
+            output/failure-analysis.json
+            output/ai-test-report.json
+            output/ai-test-report.html
+            tests/generated/login.spec.ts
+          retention-days: 7
+          if-no-files-found: warn
+
+
+      # ==========================================
+      # 9. Run Normal Playwright Tests
       # ==========================================
 
       - name: Run Normal Playwright Tests
+        if: always()
         run: |
           npx playwright test \
             --project=chromium \
@@ -139,10 +190,11 @@ jobs:
 
 
       # ==========================================
-      # 7. Run Cucumber BDD Tests
+      # 10. Run Cucumber BDD Tests
       # ==========================================
 
       - name: Run Cucumber BDD Tests
+        if: always()
         run: |
           if [ -n "${{ inputs.tag }}" ]; then
             npm run bdd -- --tags "${{ inputs.tag }}"
@@ -155,7 +207,7 @@ jobs:
 
 
       # ==========================================
-      # 8. Upload Playwright Report
+      # 11. Upload Playwright Report
       # ==========================================
 
       - name: Upload Playwright Report
@@ -165,10 +217,11 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+          if-no-files-found: warn
 
 
       # ==========================================
-      # 9. Upload Cucumber Report
+      # 12. Upload Cucumber Report
       # ==========================================
 
       - name: Upload Cucumber Report
@@ -178,24 +231,13 @@ jobs:
           name: cucumber-report
           path: reports/
           retention-days: 7
+          if-no-files-found: warn
 
 
       # ==========================================
-      # 10. Email Notification
+      # 13. Email configuration check
       # ==========================================
-      #
-      # Required GitHub Secrets:
-      #
-      # SMTP_USERNAME
-      # SMTP_PASSWORD
-      # EMAIL_TO
-      #
-      # Add an email action here if email
-      # notification is required.
-      #
-      # This step is intentionally disabled
-      # until SMTP details are configured.
-      # ==========================================
+
       - name: Check email configuration
         if: ${{ always() && inputs.send_email == true }}
         env:
@@ -204,6 +246,11 @@ jobs:
         run: |
           echo "SMTP username configured: ${SMTP_USER:+YES}"
           echo "SMTP password configured: ${SMTP_PASS:+YES}"
+
+
+      # ==========================================
+      # 14. Send Email Notification
+      # ==========================================
 
       - name: Send Email Notification
         if: ${{ always() && inputs.send_email == true }}
@@ -228,6 +275,16 @@ jobs:
             Branch: ${{ inputs.branch || github.ref_name }}
             Environment: ${{ inputs.environment || 'qa' }}
             Status: ${{ job.status }}
+
+            AI QA Pipeline:
+            Requirement Analysis
+            Human Clarification
+            AI Scenario Generation
+            AI Playwright Generation
+            Playwright Execution
+            AI Failure Analysis
+            AI Test Report
+            HTML Report
 
             Workflow:
             ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

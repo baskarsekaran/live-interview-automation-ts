@@ -10,6 +10,15 @@ interface TestResult {
     message?: string;
     stack?: string;
   };
+  projectName?: string;
+}
+
+interface FailedTest {
+  title: string;
+  project?: string;
+  error: string;
+  stack?: string;
+  duration?: number;
 }
 
 interface ExecutionResult {
@@ -20,10 +29,7 @@ interface ExecutionResult {
   duration: string;
   exitCode: number;
   output: string;
-  failedTests: Array<{
-    title: string;
-    error: string;
-  }>;
+  failedTests: FailedTest[];
 }
 
 function runTests(): Promise<ExecutionResult> {
@@ -60,7 +66,7 @@ function runTests(): Promise<ExecutionResult> {
     exec(
       command,
       {
-        maxBuffer: 10 * 1024 * 1024
+        maxBuffer: 20 * 1024 * 1024
       },
       (error, stdout, stderr) => {
         const exitCode =
@@ -78,10 +84,7 @@ function runTests(): Promise<ExecutionResult> {
         let failed = 0;
         let duration = "";
 
-        const failedTests: Array<{
-          title: string;
-          error: string;
-        }> = [];
+        const failedTests: FailedTest[] = [];
 
         /*
          * Read Playwright JSON report
@@ -97,12 +100,11 @@ function runTests(): Promise<ExecutionResult> {
             const report =
               JSON.parse(reportText);
 
-            /*
-             * Playwright JSON reporter
-             * contains suites -> specs -> tests
-             */
             const tests: TestResult[] = [];
 
+            /*
+             * Recursively collect Playwright tests
+             */
             function collectTests(
               suites: any[]
             ) {
@@ -113,14 +115,29 @@ function runTests(): Promise<ExecutionResult> {
 
                     if (spec.tests) {
                       for (const test of spec.tests) {
+
+                        const result =
+                          test.results?.[0];
+
                         tests.push({
-                          title: spec.title,
+                          title:
+                            spec.title,
+
                           status:
                             test.status,
+
                           duration:
-                            test.results?.[0]?.duration,
+                            result?.duration,
+
                           error:
-                            test.results?.[0]?.error
+                            result?.error,
+
+                          projectName:
+                            test.projectName ||
+                            test.project?.name ||
+                            result?.workerIndex !== undefined
+                              ? test.projectName
+                              : undefined
                         });
                       }
                     }
@@ -141,31 +158,43 @@ function runTests(): Promise<ExecutionResult> {
 
             total = tests.length;
 
+            /*
+             * Count passed and failed tests
+             */
             for (const test of tests) {
 
               if (
-                test.status ===
-                  "expected" ||
-                test.status ===
-                  "passed"
+                test.status === "expected" ||
+                test.status === "passed"
               ) {
                 passed++;
               } else {
+
                 failed++;
 
                 failedTests.push({
                   title:
                     test.title ||
                     "Unknown test",
+
+                  project:
+                    test.projectName,
+
                   error:
                     test.error?.message ||
-                    "Unknown error"
+                    "Unknown error",
+
+                  stack:
+                    test.error?.stack,
+
+                  duration:
+                    test.duration
                 });
               }
             }
 
             /*
-             * Calculate duration
+             * Calculate total execution duration
              */
             const totalDuration =
               tests.reduce(
@@ -196,7 +225,7 @@ function runTests(): Promise<ExecutionResult> {
 
         /*
          * Fallback parser
-         * in case JSON report is unavailable
+         * if JSON report is unavailable
          */
         if (total === 0) {
 
@@ -228,6 +257,9 @@ function runTests(): Promise<ExecutionResult> {
             passed + failed;
         }
 
+        /*
+         * Determine final execution status
+         */
         const status =
           failed > 0 ||
           exitCode !== 0
@@ -246,6 +278,9 @@ function runTests(): Promise<ExecutionResult> {
             failedTests
           };
 
+        /*
+         * Console result
+         */
         console.log("");
 
         if (status === "PASSED") {
@@ -263,9 +298,11 @@ function runTests(): Promise<ExecutionResult> {
         console.log(
           "================================="
         );
+
         console.log(
           "EXECUTION RESULT"
         );
+
         console.log(
           "================================="
         );
@@ -290,12 +327,15 @@ function runTests(): Promise<ExecutionResult> {
           `Duration: ${duration}`
         );
 
+        /*
+         * Print detailed failure information
+         */
         if (failedTests.length > 0) {
 
           console.log("");
 
           console.log(
-            "FAILED TESTS:"
+            "FAILED TEST DETAILS:"
           );
 
           for (
@@ -303,18 +343,47 @@ function runTests(): Promise<ExecutionResult> {
             of failedTests
           ) {
 
-            console.log(
-              `- ${test.title}`
-            );
+            console.log("");
 
             console.log(
-              `  ${test.error}`
+              `Test: ${test.title}`
             );
+
+            if (test.project) {
+              console.log(
+                `Project: ${test.project}`
+              );
+            }
+
+            if (
+              test.duration !== undefined
+            ) {
+              console.log(
+                `Duration: ${test.duration}ms`
+              );
+            }
+
+            console.log(
+              `Error: ${test.error}`
+            );
+
+            if (test.stack) {
+              console.log(
+                "Stack:"
+              );
+
+              console.log(
+                test.stack
+              );
+            }
           }
         }
 
         console.log("");
 
+        /*
+         * Save execution result
+         */
         const executionResultPath =
           path.join(
             outputDir,
