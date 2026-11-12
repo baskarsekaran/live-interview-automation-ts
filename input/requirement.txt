@@ -1,5 +1,5 @@
-User should be able to login with valid username and password.
+The user should be able to search for a product.
 
-If the username or password is invalid, an appropriate error message should be displayed.
+When the user enters a valid product search term, matching products should be displayed.
 
-The login button should not allow submission when mandatory fields are empty.
+When the user searches for a product that does not exist, an appropriate no-results message should be displayed.

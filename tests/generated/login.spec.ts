@@ -15,7 +15,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('TC001 - Successful login with valid username and password', async ({ page }) => {
+test('TC001', async ({ page }) => {
   await page.locator('[data-test="username"]').fill('standard_user');
   await page.locator('[data-test="password"]').fill('secret_sauce');
   await Promise.all([
@@ -29,12 +29,10 @@ test('TC001 - Successful login with valid username and password', async ({ page 
       '[data-test="login-button"]'
     )
   ]);
-  await expect(
-    page.locator('[data-test="title"]')
-  ).toHaveText('Products');
+  await expect(page.locator('[data-test="title"]')).toHaveText('Products');
 });
 
-test('TC002 - Login fails with invalid username and valid password', async ({ page }) => {
+test('TC002', async ({ page }) => {
   await page.locator('[data-test="username"]').fill('invalid_user');
   await page.locator('[data-test="password"]').fill('secret_sauce');
   await page.locator('[data-test="login-button"]').click();
@@ -45,7 +43,7 @@ test('TC002 - Login fails with invalid username and valid password', async ({ pa
   );
 });
 
-test('TC003 - Login fails with valid username and invalid password', async ({ page }) => {
+test('TC003', async ({ page }) => {
   await page.locator('[data-test="username"]').fill('standard_user');
   await page.locator('[data-test="password"]').fill('invalid_password');
   await page.locator('[data-test="login-button"]').click();
@@ -56,7 +54,7 @@ test('TC003 - Login fails with valid username and invalid password', async ({ pa
   );
 });
 
-test('TC004 - Login fails with invalid username and invalid password', async ({ page }) => {
+test('TC004', async ({ page }) => {
   await page.locator('[data-test="username"]').fill('invalid_user');
   await page.locator('[data-test="password"]').fill('invalid_password');
   await page.locator('[data-test="login-button"]').click();
@@ -67,14 +65,14 @@ test('TC004 - Login fails with invalid username and invalid password', async ({ 
   );
 });
 
-test('TC005 - Login fails when both mandatory fields are empty', async ({ page }) => {
+test('TC005', async ({ page }) => {
   await page.locator('[data-test="login-button"]').click();
   await expect(
     page.locator('[data-test="error"]')
   ).toBeVisible();
 });
 
-test('TC006 - Login fails when username is empty and password is valid', async ({ page }) => {
+test('TC006', async ({ page }) => {
   await page.locator('[data-test="password"]').fill('secret_sauce');
   await page.locator('[data-test="login-button"]').click();
   await expect(
@@ -82,7 +80,7 @@ test('TC006 - Login fails when username is empty and password is valid', async (
   ).toBeVisible();
 });
 
-test('TC007 - Login fails when username is valid and password is empty', async ({ page }) => {
+test('TC007', async ({ page }) => {
   await page.locator('[data-test="username"]').fill('standard_user');
   await page.locator('[data-test="login-button"]').click();
   await expect(
@@ -90,7 +88,7 @@ test('TC007 - Login fails when username is valid and password is empty', async (
   ).toBeVisible();
 });
 
-test('TC008 - Login fails due to username case sensitivity', async ({ page }) => {
+test('TC008', async ({ page }) => {
   await page.locator('[data-test="username"]').fill('Standard_User');
   await page.locator('[data-test="password"]').fill('secret_sauce');
   await page.locator('[data-test="login-button"]').click();
@@ -101,7 +99,7 @@ test('TC008 - Login fails due to username case sensitivity', async ({ page }) =>
   );
 });
 
-test('TC009 - Login fails due to password case sensitivity', async ({ page }) => {
+test('TC009', async ({ page }) => {
   await page.locator('[data-test="username"]').fill('standard_user');
   await page.locator('[data-test="password"]').fill('Secret_Sauce');
   await page.locator('[data-test="login-button"]').click();

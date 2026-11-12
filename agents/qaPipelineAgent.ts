@@ -1,3 +1,4 @@
+
 import fs from "fs";
 import path from "path";
 import { exec } from "child_process";
@@ -7,6 +8,27 @@ interface RequirementAnalysis {
   riskLevel: string;
   missingInformation: string[];
   questions: string[];
+}
+
+type FeasibilityStatus =
+  | "READY"
+  | "NEEDS_CLARIFICATION"
+  | "NEEDS_CONFIGURATION"
+  | "PARTIALLY_AUTOMATABLE"
+  | "NEEDS_REVIEW"
+  | "BLOCKED";
+
+interface FeasibilityResult {
+  status: FeasibilityStatus;
+  summary: string;
+  blockers: string[];
+  missingRequirements: string[];
+  missingCapabilities: string[];
+  missingConfiguration: string[];
+  missingLocators: string[];
+  automationApproach: string[];
+  recommendations: string[];
+  assumptions: string[];
 }
 
 interface ExecutionResult {
@@ -29,572 +51,428 @@ interface TestReport {
   };
 }
 
-function runCommand(
-  command: string
-): Promise<boolean> {
+const ROOT = process.cwd();
+const OUTPUT = path.join(ROOT, "output");
+const AGENTS = path.join(ROOT, "agents");
+
+function fileExists(filePath: string): boolean {
+  return fs.existsSync(filePath);
+}
+
+function readJsonFile<T>(filePath: string): T {
+  if (!fileExists(filePath)) {
+    throw new Error(`Required file not found: ${filePath}`);
+  }
+
+  return JSON.parse(fs.readFileSync(filePath, "utf8")) as T;
+}
+
+function runCommand(command: string): Promise<boolean> {
   return new Promise((resolve) => {
-    console.log("");
-    console.log("=================================");
+    console.log("\n=================================");
     console.log(`RUNNING: ${command}`);
-    console.log("=================================");
-    console.log("");
+    console.log("=================================\n");
 
     exec(
       command,
       {
-        cwd: process.cwd(),
+        cwd: ROOT,
         maxBuffer: 20 * 1024 * 1024,
         timeout: 10 * 60 * 1000,
-        env: {
-          ...process.env
-        }
+        env: { ...process.env }
       },
       (error, stdout, stderr) => {
-        if (stdout) {
-          console.log(stdout);
-        }
-
-        if (stderr) {
-          console.log(stderr);
-        }
+        if (stdout) console.log(stdout);
+        if (stderr) console.log(stderr);
 
         if (error) {
-          console.log(
-            `Command failed: ${command}`
-          );
-
-          console.log(
-            `Exit code: ${error.code ?? "unknown"}`
-          );
-
+          console.error(`Command failed: ${command}`);
+          console.error(`Exit code: ${error.code ?? "unknown"}`);
           resolve(false);
-        } else {
-          console.log(
-            `Command completed successfully: ${command}`
-          );
-
-          resolve(true);
+          return;
         }
+
+        console.log(`Command completed successfully: ${command}`);
+        resolve(true);
       }
     );
   });
 }
 
-function readJsonFile<T>(
-  filePath: string
-): T {
-  if (!fs.existsSync(filePath)) {
+async function runAgent(
+  fileName: string,
+  description: string
+): Promise<void> {
+  const agentPath = path.join(AGENTS, fileName);
+
+  if (!fileExists(agentPath)) {
     throw new Error(
-      `Required file not found: ${filePath}`
+      `${description} cannot run: ${agentPath} does not exist.`
     );
   }
 
-  return JSON.parse(
-    fs.readFileSync(
-      filePath,
-      "utf-8"
-    )
+  const success = await runCommand(
+    `npx ts-node "agents/${fileName}"`
+  );
+
+  if (!success) {
+    throw new Error(`${description} failed.`);
+  }
+}
+
+function validateFeasibility(
+  result: FeasibilityResult
+): void {
+  const statuses: FeasibilityStatus[] = [
+    "READY",
+    "NEEDS_CLARIFICATION",
+    "NEEDS_CONFIGURATION",
+    "PARTIALLY_AUTOMATABLE",
+    "NEEDS_REVIEW",
+    "BLOCKED"
+  ];
+
+  if (!statuses.includes(result.status)) {
+    throw new Error(
+      `Invalid feasibility status: ${result.status}`
+    );
+  }
+
+  if (
+    typeof result.summary !== "string" ||
+    !result.summary.trim()
+  ) {
+    throw new Error("Feasibility summary is missing.");
+  }
+}
+
+function stopForFeasibility(
+  result: FeasibilityResult
+): never {
+  console.error("\n=================================");
+  console.error("AUTOMATION GATE REQUIRES ACTION");
+  console.error("=================================");
+  console.error(`Status: ${result.status}`);
+  console.error(`Summary: ${result.summary}`);
+
+  const findings: Array<[string, string[]]> = [
+    ["Blockers", result.blockers ?? []],
+    ["Missing requirements", result.missingRequirements ?? []],
+    ["Missing capabilities", result.missingCapabilities ?? []],
+    ["Missing configuration", result.missingConfiguration ?? []],
+    ["Missing locators", result.missingLocators ?? []],
+    ["Recommendations", result.recommendations ?? []]
+  ];
+
+  for (const [heading, items] of findings) {
+    if (items.length) {
+      console.error(`\n${heading}:`);
+      items.forEach(item => console.error(`- ${item}`));
+    }
+  }
+
+  throw new Error(
+    `Pipeline paused at feasibility gate: ${result.status}. ` +
+    "Resolve the listed actions before generating tests."
   );
 }
 
-async function runQAPipeline() {
-  console.log("");
-  console.log("=================================");
-  console.log("       AI QA PIPELINE AGENT");
-  console.log("=================================");
-  console.log("");
+async function runQAPipeline(): Promise<void> {
+  const startedAt = Date.now();
 
-  const startTime = Date.now();
+  console.log("\n=================================");
+  console.log("       GENERIC AI QA PIPELINE");
+  console.log("=================================\n");
 
-  // =================================
-  // STEP 1
-  // Gemini Requirement Analysis
-  // =================================
+  // STEP 1: Requirement analysis
+  console.log("STEP 1: Requirement Analysis");
 
-  console.log(
-    "STEP 1: Gemini Requirement Analysis"
+  await runAgent(
+    "llmRequirementAgent.ts",
+    "Requirement analysis"
   );
-
-  const requirementSuccess =
-    await runCommand(
-      "npx ts-node agents/llmRequirementAgent.ts"
-    );
-
-  if (!requirementSuccess) {
-    throw new Error(
-      "Requirement analysis failed. Pipeline stopped."
-    );
-  }
-
-  const analysisFile =
-    path.join(
-      process.cwd(),
-      "output",
-      "requirement-analysis.json"
-    );
-
-  if (!fs.existsSync(analysisFile)) {
-    throw new Error(
-      "Requirement analysis artifact was not generated."
-    );
-  }
 
   const requirementAnalysis =
     readJsonFile<RequirementAnalysis>(
-      analysisFile
+      path.join(OUTPUT, "requirement-analysis.json")
     );
 
-  console.log("");
-  console.log(
-    `Requirement Quality : ${requirementAnalysis.quality}`
+  console.log(`Requirement Quality: ${requirementAnalysis.quality}`);
+  console.log(`Risk Level: ${requirementAnalysis.riskLevel}`);
+
+  // STEP 2: Human clarification
+  console.log("\nSTEP 2: Human-in-the-Loop Clarification");
+
+  await runAgent(
+    "humanClarificationAgent.ts",
+    "Human clarification"
   );
 
-  console.log(
-    `Risk Level          : ${requirementAnalysis.riskLevel}`
+  const clarificationPath =
+    path.join(OUTPUT, "clarification-answers.json");
+
+  if (!fileExists(clarificationPath)) {
+    throw new Error(
+      "Clarification artifact was not generated."
+    );
+  }
+
+  // STEP 3: Scenario generation
+  console.log("\nSTEP 3: Test Scenario Generation");
+
+  await runAgent(
+    "llmScenarioAgent.ts",
+    "Test scenario generation"
   );
 
-  // =================================
-  // STEP 2
-  // Human-in-the-Loop Clarification
-  // =================================
-
-  console.log("");
-  console.log(
-    "STEP 2: Human-in-the-Loop Clarification"
+  const scenarios = readJsonFile<any>(
+    path.join(OUTPUT, "test-scenarios.json")
   );
 
-  console.log("");
-  console.log(
-    "The AI identified requirement gaps."
+  const scenarioList = Array.isArray(scenarios)
+    ? scenarios
+    : scenarios?.scenarios ?? scenarios?.testScenarios;
+
+  if (!Array.isArray(scenarioList) || scenarioList.length === 0) {
+    throw new Error(
+      "No valid test scenarios were generated."
+    );
+  }
+
+  console.log(`Scenarios generated: ${scenarioList.length}`);
+
+  // STEP 3.5: Application discovery
+  console.log("\nSTEP 3.5: Application Discovery");
+
+  const discoveryAgentPath =
+    path.join(AGENTS, "applicationDiscoveryAgent.ts");
+
+  const discoveryArtifact =
+    path.join(OUTPUT, "application-discovery.json");
+
+  if (fileExists(discoveryAgentPath)) {
+    await runAgent(
+      "applicationDiscoveryAgent.ts",
+      "Application discovery"
+    );
+
+    if (!fileExists(discoveryArtifact)) {
+      throw new Error(
+        "Discovery agent ran but produced no application-discovery.json."
+      );
+    }
+
+    console.log("Application discovery evidence is available.");
+  } else {
+    console.warn(
+      "Application discovery agent is not implemented yet."
+    );
+    console.warn(
+      "Feasibility will be assessed using existing configuration and evidence."
+    );
+  }
+
+  // STEP 4: Feasibility assessment
+  console.log("\nSTEP 4: Automation Feasibility Assessment");
+
+  await runAgent(
+    "automationFeasibilityAgent.ts",
+    "Automation feasibility assessment"
   );
 
-  console.log(
-    "Human clarification is required before scenario generation."
+  const feasibility =
+    readJsonFile<FeasibilityResult>(
+      path.join(OUTPUT, "automation-feasibility.json")
+    );
+
+  validateFeasibility(feasibility);
+
+  console.log(`\nFeasibility status: ${feasibility.status}`);
+  console.log(feasibility.summary);
+
+  /*
+   * READY:
+   * All required scenarios can proceed.
+   *
+   * PARTIALLY_AUTOMATABLE:
+   * This pipeline currently pauses for review because the
+   * generator and execution agent must first support per-scenario
+   * selection and partial execution.
+   *
+   * Other statuses:
+   * Resolve clarification, configuration, review, or blockers.
+   */
+  if (feasibility.status !== "READY") {
+    stopForFeasibility(feasibility);
+  }
+
+  // STEP 5: Generate tests
+  console.log("\nSTEP 5: Playwright Test Generation");
+
+  await runAgent(
+    "playwrightTestGenerator.ts",
+    "Playwright test generation"
   );
 
   /*
-   * The clarification agent supports two modes:
-   *
-   * 1. Local interactive mode
-   *    - If input/clarification-answers.json does not exist,
-   *      the agent asks the human questions.
-   *
-   * 2. CI/CD non-interactive mode
-   *    - If input/clarification-answers.json exists,
-   *      approved human answers are loaded automatically.
-   *
-   * Therefore we use runCommand() instead of
-   * runInteractiveCommand().
+   * Generic output contract:
+   * The generator should create one or more *.spec.ts files
+   * under tests/generated/. Do not assume a login-specific name.
    */
+  const generatedDirectory =
+    path.join(ROOT, "tests", "generated");
 
-  const clarificationSuccess =
-    await runCommand(
-      "npx ts-node agents/humanClarificationAgent.ts"
-    );
+  function findSpecFiles(directory: string): string[] {
+    if (!fileExists(directory)) return [];
 
-  if (!clarificationSuccess) {
+    const found: string[] = [];
+
+    for (const entry of fs.readdirSync(directory, {
+      withFileTypes: true
+    })) {
+      const fullPath = path.join(directory, entry.name);
+
+      if (entry.isDirectory()) {
+        found.push(...findSpecFiles(fullPath));
+      } else if (
+        entry.isFile() &&
+        /\.spec\.(ts|js)$/.test(entry.name)
+      ) {
+        found.push(fullPath);
+      }
+    }
+
+    return found;
+  }
+
+  const generatedTests = findSpecFiles(generatedDirectory);
+
+  if (generatedTests.length === 0) {
     throw new Error(
-      "Human clarification failed. Pipeline stopped."
+      "No generated Playwright *.spec.ts or *.spec.js files found."
     );
   }
 
-  const clarificationFile =
-    path.join(
-      process.cwd(),
-      "output",
-      "clarification-answers.json"
-    );
+  console.log(`Generated test files: ${generatedTests.length}`);
 
-  if (!fs.existsSync(clarificationFile)) {
-    throw new Error(
-      "Human clarification artifact was not generated."
-    );
-  }
+  generatedTests.forEach(file => {
+    console.log(`- ${path.relative(ROOT, file)}`);
+  });
 
-  console.log("");
-  console.log(
-    "Human clarification completed successfully."
+  // STEP 6: Execute tests
+  console.log("\nSTEP 6: Playwright Test Execution");
+
+  const executionCommandSuccess = await runCommand(
+    "npx ts-node agents/testExecutionAgent.ts"
   );
-
-  // =================================
-  // STEP 3
-  // Gemini Scenario Generation
-  // =================================
-
-  console.log("");
-  console.log(
-    "STEP 3: Gemini Test Scenario Generation"
-  );
-
-  const scenarioSuccess =
-    await runCommand(
-      "npx ts-node agents/llmScenarioAgent.ts"
-    );
-
-  if (!scenarioSuccess) {
-    throw new Error(
-      "Scenario generation failed. Pipeline stopped."
-    );
-  }
-
-  const scenarioFile =
-    path.join(
-      process.cwd(),
-      "output",
-      "test-scenarios.json"
-    );
-
-  if (!fs.existsSync(scenarioFile)) {
-    throw new Error(
-      "Test scenario artifact was not generated."
-    );
-  }
-
-  /*
-   * test-scenarios.json is a direct array.
-   *
-   * Example:
-   *
-   * [
-   *   { "id": "TC001", ... },
-   *   { "id": "TC002", ... }
-   * ]
-   */
-
-  const scenarioData =
-    readJsonFile<any[]>(
-      scenarioFile
-    );
-
-  if (!Array.isArray(scenarioData)) {
-    throw new Error(
-      "Invalid test-scenarios.json format. Expected an array."
-    );
-  }
-
-  console.log("");
-  console.log(
-    `Scenarios generated: ${scenarioData.length}`
-  );
-
-  // =================================
-  // STEP 4
-  // Gemini Playwright Code Generation
-  // =================================
-
-  console.log("");
-  console.log(
-    "STEP 4: Gemini Playwright Code Generation"
-  );
-
-  const codeGenerationSuccess =
-    await runCommand(
-      "npx ts-node agents/playwrightTestGenerator.ts"
-    );
-
-  if (!codeGenerationSuccess) {
-    throw new Error(
-      "Playwright code generation failed. Pipeline stopped."
-    );
-  }
-
-  const generatedTestFile =
-    path.join(
-      process.cwd(),
-      "tests",
-      "generated",
-      "login.spec.ts"
-    );
-
-  if (!fs.existsSync(generatedTestFile)) {
-    throw new Error(
-      "Generated Playwright test file was not created."
-    );
-  }
-
-  // =================================
-  // STEP 5
-  // Playwright Test Execution
-  // =================================
-
-  console.log("");
-  console.log(
-    "STEP 5: Playwright Test Execution"
-  );
-
-  const executionSuccess =
-    await runCommand(
-      "npx ts-node agents/testExecutionAgent.ts"
-    );
-
-  /*
-   * Playwright execution can fail because individual
-   * tests failed.
-   *
-   * This should NOT immediately stop the pipeline.
-   *
-   * The failure-analysis agent needs the execution
-   * artifact to understand what failed.
-   */
-
-  if (!executionSuccess) {
-    console.log("");
-    console.log(
-      "Playwright execution command reported failure."
-    );
-
-    console.log(
-      "Continuing to failure analysis..."
-    );
-  }
 
   const executionFile =
-    path.join(
-      process.cwd(),
-      "output",
-      "execution-result.json"
-    );
+    path.join(OUTPUT, "execution-result.json");
 
-  if (!fs.existsSync(executionFile)) {
+  if (!fileExists(executionFile)) {
     throw new Error(
       "Execution result artifact was not generated."
     );
   }
 
-  const executionResult =
-    readJsonFile<ExecutionResult>(
-      executionFile
-    );
+  const execution =
+    readJsonFile<ExecutionResult>(executionFile);
 
-  console.log("");
-  console.log(
-    `Total Tests : ${executionResult.total}`
-  );
+  console.log(`Total: ${execution.total}`);
+  console.log(`Passed: ${execution.passed}`);
+  console.log(`Failed: ${execution.failed}`);
 
-  console.log(
-    `Passed      : ${executionResult.passed}`
-  );
-
-  console.log(
-    `Failed      : ${executionResult.failed}`
-  );
-
-  // =================================
-  // STEP 6
-  // Gemini Failure Analysis
-  // =================================
-
-  console.log("");
-  console.log(
-    "STEP 6: Gemini Failure Analysis"
-  );
-
-  const failureAnalysisSuccess =
-    await runCommand(
-      "npx ts-node agents/failureAnalysisAgent.ts"
-    );
-
-  if (!failureAnalysisSuccess) {
-    console.log("");
-    console.log(
-      "Failure analysis reported an error."
+  if (!executionCommandSuccess) {
+    console.warn(
+      "Execution command returned a failure. Continuing to analyze results."
     );
   }
 
-  const failureAnalysisFile =
-    path.join(
-      process.cwd(),
-      "output",
-      "failure-analysis.json"
-    );
+  // STEP 7: Failure analysis
+  console.log("\nSTEP 7: Failure Analysis");
 
-  if (!fs.existsSync(failureAnalysisFile)) {
-    console.log(
-      "Warning: failure-analysis.json was not generated."
+  try {
+    await runAgent(
+      "failureAnalysisAgent.ts",
+      "Failure analysis"
+    );
+  } catch (error) {
+    console.warn(
+      error instanceof Error ? error.message : error
+    );
+    console.warn(
+      "Continuing; failure analysis is not available."
     );
   }
 
-  // =================================
-  // STEP 7
-  // AI Test Report
-  // =================================
+  // STEP 8: AI test report
+  console.log("\nSTEP 8: AI Test Report");
 
-  console.log("");
-  console.log(
-    "STEP 7: AI Test Report Generation"
+  await runAgent(
+    "testReportAgent.ts",
+    "AI test report generation"
   );
-
-  const reportSuccess =
-    await runCommand(
-      "npx ts-node agents/testReportAgent.ts"
-    );
-
-  if (!reportSuccess) {
-    throw new Error(
-      "AI test report generation failed."
-    );
-  }
 
   const reportFile =
-    path.join(
-      process.cwd(),
-      "output",
-      "ai-test-report.json"
-    );
+    path.join(OUTPUT, "ai-test-report.json");
 
-  if (!fs.existsSync(reportFile)) {
+  if (!fileExists(reportFile)) {
     throw new Error(
       "AI test report was not generated."
     );
   }
 
-  // =================================
-  // STEP 8
-  // HTML Report
-  // =================================
+  // STEP 9: HTML report
+  console.log("\nSTEP 9: HTML Report");
 
-  console.log("");
-  console.log(
-    "STEP 8: HTML Report Generation"
+  await runAgent(
+    "htmlReportAgent.ts",
+    "HTML report generation"
   );
-
-  const htmlSuccess =
-    await runCommand(
-      "npx ts-node agents/htmlReportAgent.ts"
-    );
-
-  if (!htmlSuccess) {
-    throw new Error(
-      "HTML report generation failed."
-    );
-  }
 
   const htmlReportFile =
-    path.join(
-      process.cwd(),
-      "output",
-      "ai-test-report.html"
-    );
+    path.join(OUTPUT, "ai-test-report.html");
 
-  if (!fs.existsSync(htmlReportFile)) {
-    throw new Error(
-      "HTML report was not generated."
-    );
+  if (!fileExists(htmlReportFile)) {
+    throw new Error("HTML report was not generated.");
   }
 
-  // =================================
-  // FINAL SUMMARY
-  // =================================
+  const report = readJsonFile<TestReport>(reportFile);
 
-  const report =
-    readJsonFile<TestReport>(
-      reportFile
-    );
-
-  const durationSeconds =
-    (
-      (Date.now() - startTime) /
-      1000
-    ).toFixed(1);
-
-  console.log("");
+  console.log("\n=================================");
+  console.log("       AI QA PIPELINE FINISHED");
   console.log("=================================");
-  console.log("     AI QA PIPELINE COMPLETED");
-  console.log("=================================");
-  console.log("");
 
+  console.log(`Overall status: ${report.overallStatus}`);
+  console.log(`Scenarios: ${report.summary.totalScenarios}`);
+  console.log(`Executions: ${report.summary.totalExecutions}`);
+  console.log(`Passed: ${report.summary.passedTests}`);
+  console.log(`Failed: ${report.summary.failedTests}`);
+  console.log(`Duration: ${report.summary.duration}`);
   console.log(
-    `Overall Status : ${report.overallStatus}`
+    `Pipeline time: ${((Date.now() - startedAt) / 1000).toFixed(1)}s`
   );
 
-  console.log(
-    `Scenarios      : ${report.summary.totalScenarios}`
-  );
-
-  console.log(
-    `Total Tests    : ${report.summary.totalExecutions}`
-  );
-
-  console.log(
-    `Passed         : ${report.summary.passedTests}`
-  );
-
-  console.log(
-    `Failed         : ${report.summary.failedTests}`
-  );
-
-  console.log(
-    `Test Duration  : ${report.summary.duration}`
-  );
-
-  console.log(
-    `Pipeline Time  : ${durationSeconds}s`
-  );
-
-  console.log("");
-  console.log("Generated Artifacts:");
-  console.log("");
-
-  console.log(
-    "✓ output/requirement-analysis.json"
-  );
-
-  console.log(
-    "✓ output/clarification-answers.json"
-  );
-
-  console.log(
-    "✓ output/test-scenarios.json"
-  );
-
-  console.log(
-    "✓ tests/generated/login.spec.ts"
-  );
-
-  console.log(
-    "✓ output/execution-result.json"
-  );
-
-  console.log(
-    "✓ output/failure-analysis.json"
-  );
-
-  console.log(
-    "✓ output/ai-test-report.json"
-  );
-
-  console.log(
-    "✓ output/ai-test-report.html"
-  );
-
-  console.log("");
-  console.log("=================================");
-  console.log("        PIPELINE FINISHED");
-  console.log("=================================");
-  console.log("");
+  console.log("\nArtifacts:");
+  console.log("- output/requirement-analysis.json");
+  console.log("- output/clarification-answers.json");
+  console.log("- output/test-scenarios.json");
+  console.log("- output/application-discovery.json (when discovery is enabled)");
+  console.log("- output/automation-feasibility.json");
+  console.log("- output/execution-result.json");
+  console.log("- output/failure-analysis.json (if generated)");
+  console.log("- output/ai-test-report.json");
+  console.log("- output/ai-test-report.html");
 }
 
-runQAPipeline().catch(
-  (error) => {
-    console.error("");
-    console.error(
-      "================================="
-    );
-    console.error(
-      "       AI QA PIPELINE FAILED"
-    );
-    console.error(
-      "================================="
-    );
-    console.error("");
+runQAPipeline().catch(error => {
+  console.error("\n=================================");
+  console.error("       AI QA PIPELINE FAILED");
+  console.error("=================================\n");
 
-    console.error(
-      error instanceof Error
-        ? error.message
-        : error
-    );
+  console.error(
+    error instanceof Error ? error.message : error
+  );
 
-    console.error("");
-    process.exit(1);
-  }
-);
+  process.exitCode = 1;
+});

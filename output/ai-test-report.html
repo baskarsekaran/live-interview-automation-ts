@@ -528,9 +528,9 @@ summary {
       Gemini + Playwright QA Automation Pipeline
     </p>
 
-    <div class="status passed">
+    <div class="status failed">
 
-      PASSED
+      FAILED
 
     </div>
 
@@ -586,7 +586,7 @@ summary {
       <h3>Passed</h3>
 
       <div class="value">
-        27
+        25
       </div>
 
     </div>
@@ -596,7 +596,7 @@ summary {
       <h3>Failed</h3>
 
       <div class="value">
-        0
+        2
       </div>
 
     </div>
@@ -606,7 +606,7 @@ summary {
       <h3>Duration</h3>
 
       <div class="value">
-        114.3s
+        167.5s
       </div>
 
     </div>
@@ -630,7 +630,7 @@ summary {
             Chromium
           </div>
           <div class="browser-status">
-            ✓ PASSED
+            Execution completed
           </div>
         </div>
         
@@ -639,7 +639,7 @@ summary {
             Firefox
           </div>
           <div class="browser-status">
-            ✓ PASSED
+            Execution completed
           </div>
         </div>
         
@@ -648,7 +648,7 @@ summary {
             WebKit
           </div>
           <div class="browser-status">
-            ✓ PASSED
+            Execution completed
           </div>
         </div>
         
@@ -679,7 +679,7 @@ summary {
         </h3>
 
         <p>
-          NO_FAILURE
+          FAILURE_ANALYZED
         </p>
 
       </div>
@@ -691,7 +691,7 @@ summary {
         </h3>
 
         <p>
-          None
+          Timing
         </p>
 
       </div>
@@ -703,7 +703,7 @@ summary {
         </h3>
 
         <p>
-          None
+          firefox
         </p>
 
       </div>
@@ -726,7 +726,7 @@ summary {
         </h3>
 
         <p>
-          No test failures detected.
+          Multiple tests (TC001 and TC002) exceeded the 30000ms test timeout limit in the same browser, indicating a potential synchronization, performance, or waiting issue.
         </p>
 
       </div>
@@ -738,7 +738,7 @@ summary {
         </h3>
 
         <p>
-          27 tests passed successfully.
+          Both TC001 and TC002 failed with &#039;Test timeout of 30000ms exceeded.&#039; and took slightly over 31000ms to execute.
         </p>
 
       </div>
@@ -761,18 +761,119 @@ summary {
     </h2>
 
     
-      <div class="success-message">
-        <div class="success-icon">✓</div>
-
-        <div>
-          <h3>No Test Failures</h3>
-
-          <p>
-            All 27
-            Playwright executions passed successfully.
-          </p>
-        </div>
+      <div class="failure-count">
+        2 failed execution(s)
       </div>
+
+      
+              <div class="failure-card">
+
+                <div class="failure-header">
+
+                  <div>
+                    <span class="failure-number">
+                      Failure 1
+                    </span>
+
+                    <h3>
+                      TC001
+                    </h3>
+                  </div>
+
+                  <span class="failure-browser">
+                    firefox
+                  </span>
+
+                </div>
+
+                <div class="failure-detail">
+
+                  <strong>Error</strong>
+
+                  <pre>[31mTest timeout of 30000ms exceeded.[39m</pre>
+
+                </div>
+
+                
+                      <div class="failure-detail">
+
+                        <strong>Duration</strong>
+
+                        <p>
+                          30955 ms
+                        </p>
+
+                      </div>
+                    
+
+                
+                      <details>
+
+                        <summary>
+                          Stack Trace
+                        </summary>
+
+                        <pre>[31mTest timeout of 30000ms exceeded.[39m</pre>
+
+                      </details>
+                    
+
+              </div>
+            
+              <div class="failure-card">
+
+                <div class="failure-header">
+
+                  <div>
+                    <span class="failure-number">
+                      Failure 2
+                    </span>
+
+                    <h3>
+                      TC002
+                    </h3>
+                  </div>
+
+                  <span class="failure-browser">
+                    firefox
+                  </span>
+
+                </div>
+
+                <div class="failure-detail">
+
+                  <strong>Error</strong>
+
+                  <pre>[31mTest timeout of 30000ms exceeded.[39m</pre>
+
+                </div>
+
+                
+                      <div class="failure-detail">
+
+                        <strong>Duration</strong>
+
+                        <p>
+                          31133 ms
+                        </p>
+
+                      </div>
+                    
+
+                
+                      <details>
+
+                        <summary>
+                          Stack Trace
+                        </summary>
+
+                        <pre>[31mTest timeout of 30000ms exceeded.[39m</pre>
+
+                      </details>
+                    
+
+              </div>
+            
     
 
   </div>
@@ -791,7 +892,7 @@ summary {
     </h2>
 
     <p>
-      No corrective action required.
+      Investigate the execution steps for TC001 and TC002 in Firefox to identify slow network requests, missing wait conditions, or potential performance bottlenecks during test execution.
     </p>
 
   </div>

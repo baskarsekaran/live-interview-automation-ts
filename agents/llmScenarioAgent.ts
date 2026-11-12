@@ -5,509 +5,661 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
 const GEMINI_MODEL = "gemini-3.5-flash-lite";
 
-if (!GEMINI_API_KEY) {
-  throw new Error("GEMINI_API_KEY is not configured in .env");
-}
-
-const rootDir = process.cwd();
-
-const requirementFile = path.join(
-  rootDir,
-  "input",
-  "requirement.txt"
-);
-
-const analysisFile = path.join(
-  rootDir,
-  "output",
-  "requirement-analysis.json"
-);
-
-const clarificationFile = path.join(
-  rootDir,
-  "output",
-  "clarification-answers.json"
-);
-
-const applicationFile = path.join(
-  rootDir,
-  "config",
-  "application.json"
-);
-
-const scenarioFile = path.join(
-  rootDir,
-  "output",
-  "test-scenarios.json"
-);
-
-function readText(filePath: string): string {
-  if (!fs.existsSync(filePath)) {
-    throw new Error(`File not found: ${filePath}`);
-  }
-
-  return fs.readFileSync(filePath, "utf-8");
-}
-
-function readJson(filePath: string): any {
-  const content = readText(filePath);
-
-  try {
-    return JSON.parse(content);
-  } catch {
-    throw new Error(`Invalid JSON: ${filePath}`);
-  }
-}
-
-async function callGemini(prompt: string): Promise<string> {
-  const endpoint =
+const GEMINI_URL =
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [
-            {
-              text: prompt
-            }
-          ]
-        }
-      ],
-      generationConfig: {
-        temperature: 0,
-        responseMimeType: "application/json"
-      }
-    })
-  });
+async function main() {
 
-  if (!response.ok) {
-    const errorText = await response.text();
+    // --------------------------------------------------
+    // 1. Validate API key
+    // --------------------------------------------------
 
-    throw new Error(
-      `Gemini API failed: ${response.status} ${errorText}`
-    );
-  }
+    if (!GEMINI_API_KEY) {
 
-  const data: any = await response.json();
-
-  const generatedText =
-    data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-  if (!generatedText) {
-    throw new Error(
-      "Gemini returned an empty response."
-    );
-  }
-
-  return generatedText;
-}
-
-function cleanJson(response: string): string {
-  let content = response.trim();
-
-  if (content.startsWith("```json")) {
-    content = content.substring(
-      "```json".length
-    );
-  }
-
-  if (content.startsWith("```")) {
-    content = content.substring(3);
-  }
-
-  if (content.endsWith("```")) {
-    content = content.substring(
-      0,
-      content.length - 3
-    );
-  }
-
-  return content.trim();
-}
-
-function validateScenarios(
-  scenarios: any
-): void {
-  console.log("");
-  console.log("Validating generated scenarios...");
-
-  if (!Array.isArray(scenarios)) {
-    throw new Error(
-      "Gemini scenario response must be a JSON array."
-    );
-  }
-
-  if (scenarios.length !== 9) {
-    throw new Error(
-      `Expected 9 scenarios but Gemini generated ${scenarios.length}.`
-    );
-  }
-
-  const requiredIds = [
-    "TC001",
-    "TC002",
-    "TC003",
-    "TC004",
-    "TC005",
-    "TC006",
-    "TC007",
-    "TC008",
-    "TC009"
-  ];
-
-  for (const requiredId of requiredIds) {
-    const scenario = scenarios.find(
-      (item: any) =>
-        item.id === requiredId
-    );
-
-    if (!scenario) {
-      throw new Error(
-        `Missing required scenario: ${requiredId}`
-      );
+        throw new Error(
+            "GEMINI_API_KEY is missing. Please add it to the .env file."
+        );
     }
 
-    if (!scenario.title) {
-      throw new Error(
-        `Scenario ${requiredId} is missing title.`
-      );
+    // --------------------------------------------------
+    // 2. File paths
+    // --------------------------------------------------
+
+    const requirementPath = path.join(
+        process.cwd(),
+        "input",
+        "requirement.txt"
+    );
+
+    const analysisPath = path.join(
+        process.cwd(),
+        "output",
+        "requirement-analysis.json"
+    );
+
+    const clarificationPath = path.join(
+        process.cwd(),
+        "output",
+        "clarification-answers.json"
+    );
+
+    const applicationConfigPath = path.join(
+        process.cwd(),
+        "config",
+        "application.json"
+    );
+
+    const outputPath = path.join(
+        process.cwd(),
+        "output",
+        "test-scenarios.json"
+    );
+
+    // --------------------------------------------------
+    // 3. Read input files
+    // --------------------------------------------------
+
+    if (!fs.existsSync(requirementPath)) {
+        throw new Error(
+            `Requirement file not found: ${requirementPath}`
+        );
     }
 
-    if (!scenario.type) {
-      throw new Error(
-        `Scenario ${requiredId} is missing type.`
-      );
+    if (!fs.existsSync(analysisPath)) {
+        throw new Error(
+            `Requirement analysis not found: ${analysisPath}`
+        );
     }
 
-    if (!scenario.priority) {
-      throw new Error(
-        `Scenario ${requiredId} is missing priority.`
-      );
+    if (!fs.existsSync(clarificationPath)) {
+        throw new Error(
+            `Clarification answers not found: ${clarificationPath}`
+        );
     }
 
-    if (!Array.isArray(scenario.steps)) {
-      throw new Error(
-        `Scenario ${requiredId} steps must be an array.`
-      );
+    if (!fs.existsSync(applicationConfigPath)) {
+        throw new Error(
+            `Application configuration not found: ${applicationConfigPath}`
+        );
     }
 
-    if (scenario.steps.length === 0) {
-      throw new Error(
-        `Scenario ${requiredId} has no steps.`
-      );
-    }
+    const requirement = fs.readFileSync(
+        requirementPath,
+        "utf-8"
+    ).trim();
 
-    if (!scenario.expectedResult) {
-      throw new Error(
-        `Scenario ${requiredId} has no expected result.`
-      );
-    }
+    const analysis = JSON.parse(
+        fs.readFileSync(
+            analysisPath,
+            "utf-8"
+        )
+    );
+
+    const clarification = JSON.parse(
+        fs.readFileSync(
+            clarificationPath,
+            "utf-8"
+        )
+    );
+
+    const applicationConfig = JSON.parse(
+        fs.readFileSync(
+            applicationConfigPath,
+            "utf-8"
+        )
+    );
+
+    console.log("\n=================================");
+    console.log("GEMINI TEST SCENARIO AGENT");
+    console.log("=================================");
+
+    console.log("\nReading input files...");
 
     console.log(
-      `${requiredId} - ${scenario.title}`
+        "Application:",
+        applicationConfig?.application?.name || "Unknown"
     );
-  }
 
-  console.log("");
-  console.log(
-    "Scenario validation passed."
-  );
-}
+    console.log(
+        "Base URL:",
+        applicationConfig?.application?.baseUrl || "Unknown"
+    );
 
-async function main(): Promise<void> {
-  console.log("");
-  console.log("=================================");
-  console.log("GEMINI TEST SCENARIO AGENT");
-  console.log("=================================");
-  console.log("");
+    console.log("\nCurrent requirement:");
+    console.log(requirement);
 
-  console.log("Reading input files...");
+    // --------------------------------------------------
+    // 4. Prompt
+    // --------------------------------------------------
 
-  const requirement =
-    readText(requirementFile);
+    const prompt = `
+You are a senior QA automation engineer.
 
-  const requirementAnalysis =
-    readJson(analysisFile);
+Generate functional test scenarios from the CURRENT software requirement.
 
-  const clarificationAnswers =
-    readJson(clarificationFile);
+IMPORTANT:
 
-  const applicationConfig =
-    readJson(applicationFile);
+The CURRENT REQUIREMENT is the only source of truth.
 
-  console.log(
-    `Application: ${applicationConfig.application.name}`
-  );
+Do NOT assume this is a login requirement.
 
-  console.log(
-    `Base URL: ${applicationConfig.application.baseUrl}`
-  );
+Do NOT reuse scenarios from any previous requirement.
 
-  const prompt = `
-You are a Senior SDET and Test Architect.
+Do NOT generate login scenarios unless login is explicitly mentioned
+in the CURRENT REQUIREMENT.
 
-Your responsibility is ONLY to generate functional test scenarios.
+Do NOT generate scenarios based only on the application name.
 
-You are NOT generating Playwright code.
+The application may contain many features. Generate scenarios only
+for the functionality described in the CURRENT REQUIREMENT.
 
-You are NOT generating TypeScript.
+Human clarification answers are authoritative when they provide
+additional behavior.
 
-You are NOT generating Selenium code.
+The scenarios must be functional and automation-friendly.
 
-You are NOT generating automation scripts.
+Do not generate Playwright code.
 
-Return ONLY a valid JSON array.
+Do not generate selectors.
 
-==============================
-ORIGINAL REQUIREMENT
-==============================
+Do not generate locators.
 
-${requirement}
+Do not generate JavaScript or TypeScript.
 
-==============================
-REQUIREMENT ANALYSIS
-==============================
+Do not invent unsupported business rules.
 
-${JSON.stringify(
-  requirementAnalysis,
-  null,
-  2
-)}
+Consider appropriate:
 
-==============================
-HUMAN CLARIFICATION
-==============================
+- Positive scenarios
+- Negative scenarios
+- Validation scenarios
+- Boundary scenarios
+- Alternate flows
 
-${JSON.stringify(
-  clarificationAnswers,
-  null,
-  2
-)}
+Only include a scenario category when it is relevant to the
+CURRENT REQUIREMENT.
 
-==============================
-APPLICATION CONFIGURATION
-==============================
+There is NO fixed number of scenarios.
 
-${JSON.stringify(
-  applicationConfig,
-  null,
-  2
-)}
+Generate the number of scenarios needed to provide meaningful
+functional coverage of the CURRENT REQUIREMENT.
 
-==============================
-MANDATORY TEST SCENARIOS
-==============================
-
-Generate EXACTLY these 9 scenarios:
-
-TC001 - Successful login with valid username and password
-
-TC002 - Login fails with invalid username and valid password
-
-TC003 - Login fails with valid username and invalid password
-
-TC004 - Login fails with invalid username and invalid password
-
-TC005 - Login fails when both mandatory fields are empty
-
-TC006 - Login fails when username is empty and password is valid
-
-TC007 - Login fails when username is valid and password is empty
-
-TC008 - Login fails due to username case sensitivity
-
-TC009 - Login fails due to password case sensitivity
-
-Do not add scenarios.
-
-Do not remove scenarios.
-
-==============================
-SCENARIO STRUCTURE
-==============================
-
-Every scenario MUST contain:
-
-{
-  "id": "TC001",
-  "title": "Scenario title",
-  "type": "Positive",
-  "priority": "High",
-  "steps": [
-    "Step 1",
-    "Step 2"
-  ],
-  "expectedResult": "Expected result"
-}
-
-==============================
-MANDATORY RULES
-==============================
-
-1. Generate exactly 9 scenarios.
-
-2. Use these IDs exactly:
+Use sequential IDs:
 
 TC001
 TC002
 TC003
-TC004
-TC005
-TC006
-TC007
-TC008
-TC009
+...
 
-3. TC001 must be the only positive scenario.
+Each scenario MUST use exactly this structure:
 
-4. TC002 through TC009 must be negative or validation scenarios.
-
-5. Use these configured credentials.
-
-Valid username:
-${applicationConfig.login.validUsername}
-
-Valid password:
-${applicationConfig.login.validPassword}
-
-Invalid username:
-${applicationConfig.login.invalidUsername}
-
-Invalid password:
-${applicationConfig.login.invalidPassword}
-
-6. Username case sensitivity must use:
-
-Standard_User
-
-7. Password case sensitivity must use:
-
-Secret_Sauce
-
-8. Invalid credential scenarios must expect:
-
-${applicationConfig.expected.invalidCredentialsMessage}
-
-9. Empty mandatory-field scenarios must verify that an appropriate validation error is displayed.
-
-10. Do NOT invent an exact validation message for empty fields.
-
-11. Account lockout is NOT in scope.
-
-12. Rate limiting is NOT in scope.
-
-13. CAPTCHA is NOT in scope.
-
-14. Password reset is NOT in scope.
-
-15. Registration is NOT in scope.
-
-16. MFA is NOT in scope.
-
-17. Remember-me functionality is NOT in scope.
-
-18. Session timeout is NOT in scope.
-
-19. Logout is NOT in scope.
-
-20. Do not invent additional requirements.
-
-21. Do not generate automation code.
-
-22. Do not output Markdown.
-
-23. Do not output explanations.
-
-24. Output ONLY valid JSON.
-
-25. The generated scenarios must be suitable for later Playwright automation generation.
-`;
-
-  console.log("");
-  console.log("Calling Gemini...");
-
-  const response =
-    await callGemini(prompt);
-
-  console.log(
-    "Gemini response received."
-  );
-
-  const cleanedResponse =
-    cleanJson(response);
-
-  let scenarios: any;
-
-  try {
-    scenarios =
-      JSON.parse(cleanedResponse);
-  } catch {
-    throw new Error(
-      "Gemini returned invalid JSON for test scenarios."
-    );
-  }
-
-  validateScenarios(
-    scenarios
-  );
-
-  fs.mkdirSync(
-    path.dirname(scenarioFile),
-    {
-      recursive: true
-    }
-  );
-
-  fs.writeFileSync(
-    scenarioFile,
-    JSON.stringify(
-      scenarios,
-      null,
-      2
-    ),
-    "utf-8"
-  );
-
-  console.log("");
-  console.log("=================================");
-  console.log(
-    "TEST SCENARIO GENERATION COMPLETED"
-  );
-  console.log("=================================");
-  console.log("");
-
-  console.log(
-    `Scenarios generated: ${scenarios.length}`
-  );
-
-  console.log(
-    `Output: ${scenarioFile}`
-  );
-
-  console.log("");
+{
+    "id": "TC001",
+    "title": "Short scenario title",
+    "type": "Positive | Negative | Validation | Boundary | Alternate",
+    "description": "What is being validated",
+    "preconditions": [
+        "Precondition 1"
+    ],
+    "testData": [
+        "Test data 1"
+    ],
+    "steps": [
+        "Step 1",
+        "Step 2"
+    ],
+    "expectedResult": "Expected application behavior"
 }
 
-main().catch((error) => {
-  console.log("");
-  console.log("=================================");
-  console.log(
-    "TEST SCENARIO GENERATION FAILED"
-  );
-  console.log("=================================");
-  console.log("");
+Rules:
 
-  console.error(
-    error instanceof Error
-      ? error.message
-      : error
-  );
+1. IDs must start with TC001.
+2. IDs must increase sequentially.
+3. Do not skip IDs.
+4. Each scenario must directly relate to the CURRENT REQUIREMENT.
+5. Avoid duplicate scenarios.
+6. Do not invent application behavior that is not supported by
+   the requirement or clarification.
+7. Use clarification answers when available.
+8. Keep scenarios concise but testable.
+9. The output must be a JSON array.
+10. Return ONLY valid JSON.
+11. Do not return markdown.
+12. Do not return explanations outside JSON.
 
-  process.exit(1);
-});
+=================================
+CURRENT REQUIREMENT
+=================================
+
+${requirement}
+
+=================================
+REQUIREMENT ANALYSIS
+=================================
+
+${JSON.stringify(
+        analysis,
+        null,
+        2
+    )}
+
+=================================
+HUMAN CLARIFICATION
+=================================
+
+${JSON.stringify(
+        clarification,
+        null,
+        2
+    )}
+
+=================================
+APPLICATION INFORMATION
+=================================
+
+${JSON.stringify(
+        {
+            name: applicationConfig?.application?.name,
+            baseUrl: applicationConfig?.application?.baseUrl
+        },
+        null,
+        2
+    )}
+
+=================================
+TASK
+=================================
+
+Generate the complete functional test scenario set
+for the CURRENT REQUIREMENT.
+
+Return JSON array only.
+`;
+
+    // --------------------------------------------------
+    // 5. Call Gemini
+    // --------------------------------------------------
+
+    console.log("\nCalling Gemini...");
+
+    const response = await fetch(
+        GEMINI_URL,
+        {
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+
+                contents: [
+                    {
+                        parts: [
+                            {
+                                text: prompt
+                            }
+                        ]
+                    }
+                ],
+
+                generationConfig: {
+
+                    temperature: 0,
+
+                    responseMimeType:
+                        "application/json"
+                }
+            })
+        }
+    );
+
+    // --------------------------------------------------
+    // 6. Validate API response
+    // --------------------------------------------------
+
+    if (!response.ok) {
+
+        const errorText =
+            await response.text();
+
+        throw new Error(
+            `Gemini API failed: ${response.status} ${response.statusText}\n${errorText}`
+        );
+    }
+
+    const data: any =
+        await response.json();
+
+    // --------------------------------------------------
+    // 7. Extract Gemini response
+    // --------------------------------------------------
+
+    const content =
+        data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!content) {
+
+        console.error(
+            "\nFull Gemini response:"
+        );
+
+        console.error(
+            JSON.stringify(
+                data,
+                null,
+                2
+            )
+        );
+
+        throw new Error(
+            "No scenario content received from Gemini."
+        );
+    }
+
+    console.log(
+        "Gemini response received."
+    );
+
+    // --------------------------------------------------
+    // 8. Parse JSON
+    // --------------------------------------------------
+
+    let scenarios: any;
+
+    try {
+
+        scenarios =
+            JSON.parse(content);
+
+    } catch (error) {
+
+        console.error(
+            "\nRaw Gemini response:"
+        );
+
+        console.error(content);
+
+        throw new Error(
+            "Gemini did not return valid JSON."
+        );
+    }
+
+    // --------------------------------------------------
+    // 9. Validate scenario array
+    // --------------------------------------------------
+
+    if (!Array.isArray(scenarios)) {
+
+        console.error(
+            "\nInvalid Gemini scenario response:"
+        );
+
+        console.error(
+            JSON.stringify(
+                scenarios,
+                null,
+                2
+            )
+        );
+
+        throw new Error(
+            "Gemini scenario response must be a JSON array."
+        );
+    }
+
+    if (scenarios.length === 0) {
+
+        throw new Error(
+            "Gemini generated zero test scenarios."
+        );
+    }
+
+    // --------------------------------------------------
+    // 10. Validate scenario structure
+    // --------------------------------------------------
+
+    const requiredFields = [
+        "id",
+        "title",
+        "type",
+        "description",
+        "preconditions",
+        "testData",
+        "steps",
+        "expectedResult"
+    ];
+
+    const allowedTypes = [
+        "Positive",
+        "Negative",
+        "Validation",
+        "Boundary",
+        "Alternate"
+    ];
+
+    console.log(
+        "\nValidating generated scenarios..."
+    );
+
+    for (
+        let index = 0;
+        index < scenarios.length;
+        index++
+    ) {
+
+        const scenario =
+            scenarios[index];
+
+        const expectedId =
+            `TC${String(index + 1).padStart(3, "0")}`;
+
+        // ----------------------------------------------
+        // Validate ID
+        // ----------------------------------------------
+
+        if (
+            scenario.id !== expectedId
+        ) {
+
+            throw new Error(
+                `Scenario validation failed: expected ${expectedId}, received ${scenario.id}`
+            );
+        }
+
+        // ----------------------------------------------
+        // Validate fields
+        // ----------------------------------------------
+
+        for (
+            const field of requiredFields
+        ) {
+
+            if (
+                !(field in scenario)
+            ) {
+
+                throw new Error(
+                    `Scenario ${scenario.id} is missing required field: ${field}`
+                );
+            }
+        }
+
+        // ----------------------------------------------
+        // Validate scenario type
+        // ----------------------------------------------
+
+        if (
+            !allowedTypes.includes(
+                scenario.type
+            )
+        ) {
+
+            throw new Error(
+                `Scenario ${scenario.id} has invalid type: ${scenario.type}`
+            );
+        }
+
+        // ----------------------------------------------
+        // Validate arrays
+        // ----------------------------------------------
+
+        
+        if (
+            !Array.isArray(
+                scenario.preconditions
+            )
+        ) {
+
+            throw new Error(
+                `Scenario ${scenario.id}: preconditions must be an array.`
+            );
+        }
+
+        if (
+            !Array.isArray(
+                scenario.testData
+            )
+        ) {
+
+            throw new Error(
+                `Scenario ${scenario.id}: testData must be an array.`
+            );
+        }
+
+        if (
+            !Array.isArray(
+                scenario.steps
+            )
+        ) {
+
+            throw new Error(
+                `Scenario ${scenario.id}: steps must be an array.`
+            );
+        }
+
+        if (
+            scenario.steps.length === 0
+        ) {
+
+            throw new Error(
+                `Scenario ${scenario.id}: steps cannot be empty.`
+            );
+        }
+
+        // ----------------------------------------------
+        // Validate expected result
+        // ----------------------------------------------
+
+        if (
+            typeof scenario.expectedResult !==
+                "string" ||
+            scenario.expectedResult.trim() === ""
+        ) {
+
+            throw new Error(
+                `Scenario ${scenario.id}: expectedResult cannot be empty.`
+            );
+        }
+    }
+
+    // --------------------------------------------------
+    // 11. Save output
+    // --------------------------------------------------
+
+    const outputDirectory =
+        path.dirname(outputPath);
+
+    if (
+        !fs.existsSync(
+            outputDirectory
+        )
+    ) {
+
+        fs.mkdirSync(
+            outputDirectory,
+            {
+                recursive: true
+            }
+        );
+    }
+
+    fs.writeFileSync(
+
+        outputPath,
+
+        JSON.stringify(
+            scenarios,
+            null,
+            2
+        ),
+
+        "utf-8"
+    );
+
+    // --------------------------------------------------
+    // 12. Display scenarios
+    // --------------------------------------------------
+
+    console.log(
+        "\nScenario validation passed."
+    );
+
+    console.log(`
+=================================
+GENERATED TEST SCENARIOS
+=================================
+`);
+
+    scenarios.forEach(
+        (
+            scenario: any
+        ) => {
+
+            console.log(
+                `${scenario.id} - ${scenario.title}`
+            );
+
+            console.log(
+                `Type: ${scenario.type}`
+            );
+        }
+    );
+
+    console.log(`
+=================================
+TEST SCENARIO GENERATION COMPLETED
+=================================
+
+Scenarios generated: ${scenarios.length}
+Output: ${outputPath}
+`);
+
+    console.log(
+        "Gemini Test Scenario Agent completed successfully."
+    );
+}
+
+// --------------------------------------------------
+// Error handling
+// --------------------------------------------------
+
+main().catch(
+    (
+        error
+    ) => {
+
+        console.error(
+            "\nGemini Test Scenario Agent failed."
+        );
+
+        console.error(
+            error
+        );
+
+        process.exit(1);
+    }
+);
