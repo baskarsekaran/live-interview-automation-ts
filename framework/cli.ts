@@ -76,7 +76,7 @@ async function main(): Promise<void> {
     readyPlanCount: readyCount,
     blockedPlanCount: blockedCount,
     executionRequested: executeRequested,
-    executionStatus: executeRequested ? "PENDING" : "NOT_RUN"
+    executionStatus: executeRequested ? "PENDING" : "NOT_RUN",\n    executionExitCode: null as number | null
   };
   fs.writeFileSync(path.join(options.outputDir, "automation-gate.json"), JSON.stringify(gate, null, 2), "utf8");
 
