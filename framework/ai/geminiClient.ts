@@ -107,7 +107,19 @@ export async function generateWithGemini(
   try {
     return await requestModel(primaryModel, apiKey, prompt, options, 3);
   } catch (primaryError) {
-    if (!fallbackModel || fallbackModel === primaryModel) throw primaryError;
+    const message = primaryError instanceof Error ? primaryError.message : String(primaryError);
+    const retryableStatus = [429, 500, 502, 503, 504].some((status) =>
+      message.includes(`(${status} `)
+    );
+    const networkFailure = !message.startsWith("Gemini model");
+
+    if (
+      !fallbackModel ||
+      fallbackModel === primaryModel ||
+      (!retryableStatus && !networkFailure)
+    ) {
+      throw primaryError;
+    }
 
     console.warn(`Primary Gemini model ${primaryModel} unavailable after retries. Trying fallback model ${fallbackModel}...`);
     return requestModel(fallbackModel, apiKey, prompt, options, 2);
