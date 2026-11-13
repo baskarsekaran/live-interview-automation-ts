@@ -7,6 +7,41 @@ export interface PlannedAction { type: PlannedActionType; targetId?: string; val
 export interface ScenarioTestPlan { scenarioId: string; status: "READY" | "BLOCKED"; reason: string; actions: PlannedAction[]; }
 const actionTypes: PlannedActionType[] = ["click", "fill", "select", "check", "uncheck", "assertVisible", "assertText", "assertUrl"];
 
+function validateNavigationSequence(
+  plan: ScenarioTestPlan,
+  evidence: Map<string, DiscoveryElement>,
+  baseUrl: string
+): string | undefined {
+  let currentUrl = new URL(baseUrl);
+
+  for (let index = 0; index < plan.actions.length; index++) {
+    const action = plan.actions[index];
+
+    if (action.type === "assertUrl") {
+      const expectedUrl = new URL(String(action.value), baseUrl);
+      if (currentUrl.origin !== expectedUrl.origin || currentUrl.pathname !== expectedUrl.pathname) {
+        return `Step ${index + 1} expects ${expectedUrl.pathname}, but the preceding actions lead to ${currentUrl.pathname}.`;
+      }
+      continue;
+    }
+
+    const target = action.targetId ? evidence.get(action.targetId) : undefined;
+    if (!target) continue;
+    const targetPage = new URL(target.pageUrl ?? baseUrl);
+
+    if (currentUrl.origin !== targetPage.origin || currentUrl.pathname !== targetPage.pathname) {
+      return `Step ${index + 1} targets ${action.targetId} on ${targetPage.pathname}, but the workflow is currently on ${currentUrl.pathname}. Add an evidenced navigation step or block this scenario.`;
+    }
+
+    if (action.type === "click" && target.tag === "a" && target.href) {
+      const destination = new URL(target.href, currentUrl);
+      if (destination.origin === currentUrl.origin) currentUrl = destination;
+    }
+  }
+
+  return undefined;
+}
+
 export async function generateTestPlans(app: ApplicationConfig, scenarios: TestScenario[], discovery: DiscoveryEvidence): Promise<ScenarioTestPlan[]> {
   const prompt = `
 You are a cautious Playwright test designer. Convert scenarios into structured UI action plans.
@@ -51,5 +86,18 @@ Schema: [{"scenarioId":"TC001","status":"READY | BLOCKED","reason":"evidence-bas
     }
     if (plan.status === "READY" && !plan.actions.length) throw new Error(`Ready plan ${plan.scenarioId} must contain actions.`);
   });
+
+  // Validate the complete action sequence, not merely each locator in isolation.
+  // A locator discovered on another page is unusable until an evidenced click reaches that page.
+  for (const plan of plans) {
+    if (plan.status !== "READY") continue;
+    const sequenceError = validateNavigationSequence(plan, evidence, app.baseUrl);
+    if (sequenceError) {
+      plan.status = "BLOCKED";
+      plan.reason = "Navigation sequence validation failed: " + sequenceError;
+      plan.actions = [];
+    }
+  }
+
   return plans;
 }
