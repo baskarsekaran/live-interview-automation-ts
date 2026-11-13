@@ -102,7 +102,15 @@ export async function discoverWebApplication(config: ApplicationConfig, requirem
           .filter(link => isSafeInternalLink(link.href, base.origin))
           .map((link, index) => {
             const searchable = (link.text + " " + new URL(link.href).pathname).toLowerCase();
-            const score = [...requirementTerms].reduce((sum, term) => sum + (searchable.includes(term) ? 1 : 0), 0);
+            const path = new URL(link.href).pathname.toLowerCase();
+            const requirementScore = [...requirementTerms].reduce((sum, term) => sum + (searchable.includes(term) ? 1 : 0), 0);
+            // Prefer concrete workflow destinations over broad category/archive pages.
+            const routePriority = path.includes("/product_details/") ? 100
+              : path.includes("/view_cart") ? 70
+              : path.includes("/products") ? 30
+              : path.includes("/category_products/") || path.includes("/brand_products/") ? -20
+              : 0;
+            const score = requirementScore + routePriority;
             return { link, index, score };
           })
           .sort((a, b) => b.score - a.score || a.index - b.index);
@@ -112,6 +120,18 @@ export async function discoverWebApplication(config: ApplicationConfig, requirem
             queue.push({ url: nextUrl, depth: current.depth + 1 });
           }
         }
+        // Keep high-value workflow destinations ahead of broad category listings.
+        queue.sort((a, b) => {
+          const priority = (url: string) => {
+            const pathname = new URL(url).pathname.toLowerCase();
+            return pathname.includes("/product_details/") ? 100
+              : pathname.includes("/view_cart") ? 70
+              : pathname.includes("/products") ? 30
+              : pathname.includes("/category_products/") || pathname.includes("/brand_products/") ? -20
+              : 0;
+          };
+          return priority(b.url) - priority(a.url);
+        });
       } catch (error) {
         console.warn(`Discovery skipped ${normalized}: ${error instanceof Error ? error.message : String(error)}`);
       }
