@@ -1,8 +1,4 @@
 {
-  "answers": [
-    "Username and password do not match any user in this service",
-    "The login button remains enabled. When the user clicks it with either the username or password empty, the application displays a mandatory-field validation error.",
-    "No. There are no specific password complexity requirements such as minimum length, special characters, numbers, or uppercase/lowercase rules specified for this test. Password complexity testing is out of scope.",
-    "No. There is no account lockout or rate-limiting mechanism after multiple failed login attempts. Account lockout testing is out of scope."
-  ]
+  "requirement": "The user should be able to search for a product.\n\nWhen the user enters a valid product search term, matching products should be displayed.\n\nSearch should be case-insensitive and support partial matching.\n\nSearch should check both product name and product description.\n\nDisplay 10 products per page when multiple products match.\n\nWhen the user searches for a product that does not exist, display:\n\"No products found\".",
+  "answers": []
 }

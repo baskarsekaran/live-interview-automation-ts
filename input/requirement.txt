@@ -2,4 +2,11 @@ The user should be able to search for a product.
 
 When the user enters a valid product search term, matching products should be displayed.
 
-When the user searches for a product that does not exist, an appropriate no-results message should be displayed.
+Search should be case-insensitive and support partial matching.
+
+Search should check both product name and product description.
+
+Display 10 products per page when multiple products match.
+
+When the user searches for a product that does not exist, display:
+"No products found".

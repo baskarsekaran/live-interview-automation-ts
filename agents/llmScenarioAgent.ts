@@ -1,3 +1,4 @@
+
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
@@ -6,10 +7,27 @@ dotenv.config();
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-const GEMINI_MODEL = "gemini-3.5-flash-lite";
+const GEMINI_MODEL =
+    process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
 const GEMINI_URL =
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+
+// --------------------------------------------------
+// Requirement normalization
+// --------------------------------------------------
+
+function normalizeRequirement(
+    requirement: string
+): string {
+    return requirement
+        .trim()
+        .replace(/\s+/g, " ");
+}
+
+// --------------------------------------------------
+// Main
+// --------------------------------------------------
 
 async function main() {
 
@@ -59,7 +77,7 @@ async function main() {
     );
 
     // --------------------------------------------------
-    // 3. Read input files
+    // 3. Validate input files
     // --------------------------------------------------
 
     if (!fs.existsSync(requirementPath)) {
@@ -86,10 +104,20 @@ async function main() {
         );
     }
 
+    // --------------------------------------------------
+    // 4. Read input files
+    // --------------------------------------------------
+
     const requirement = fs.readFileSync(
         requirementPath,
         "utf-8"
     ).trim();
+
+    if (!requirement) {
+        throw new Error(
+            "The current requirement is empty."
+        );
+    }
 
     const analysis = JSON.parse(
         fs.readFileSync(
@@ -112,6 +140,91 @@ async function main() {
         )
     );
 
+    // --------------------------------------------------
+    // 5. Validate clarification data
+    // --------------------------------------------------
+
+    console.log("\n=================================");
+    console.log("VALIDATING CLARIFICATION DATA");
+    console.log("=================================");
+
+    if (
+        !clarification ||
+        typeof clarification !== "object" ||
+        Array.isArray(clarification)
+    ) {
+        throw new Error(
+            "Invalid clarification output. Expected a JSON object."
+        );
+    }
+
+    if (
+        typeof clarification.requirement !== "string"
+    ) {
+        throw new Error(
+            "Clarification output is missing its requirement. Regenerate clarification answers using humanClarificationAgent.ts."
+        );
+    }
+
+    const currentRequirement =
+        normalizeRequirement(requirement);
+
+    const clarificationRequirement =
+        normalizeRequirement(
+            clarification.requirement
+        );
+
+    if (
+        currentRequirement !== clarificationRequirement
+    ) {
+        throw new Error(
+            "REQUIREMENT MISMATCH: Clarification answers belong to a different requirement. Run humanClarificationAgent.ts again."
+        );
+    }
+
+    if (
+        !Array.isArray(clarification.answers) ||
+        !clarification.answers.every(
+            (answer: unknown) =>
+                typeof answer === "string"
+        )
+    ) {
+        throw new Error(
+            "Invalid clarification answers. Expected an array of strings."
+        );
+    }
+
+    if (
+        ![
+            "INTERACTIVE_HUMAN",
+            "CI_APPROVED_ANSWERS"
+        ].includes(clarification.mode)
+    ) {
+        throw new Error(
+            "Invalid clarification mode."
+        );
+    }
+
+    console.log(
+        "Current requirement matches clarification requirement."
+    );
+
+    console.log(
+        `Clarification mode: ${clarification.mode}`
+    );
+
+    console.log(
+        `Clarification answers: ${clarification.answers.length}`
+    );
+
+    console.log(
+        "Clarification validation passed."
+    );
+
+    // --------------------------------------------------
+    // 6. Display application information
+    // --------------------------------------------------
+
     console.log("\n=================================");
     console.log("GEMINI TEST SCENARIO AGENT");
     console.log("=================================");
@@ -132,7 +245,7 @@ async function main() {
     console.log(requirement);
 
     // --------------------------------------------------
-    // 4. Prompt
+    // 7. Prompt
     // --------------------------------------------------
 
     const prompt = `
@@ -280,7 +393,7 @@ Return JSON array only.
 `;
 
     // --------------------------------------------------
-    // 5. Call Gemini
+    // 8. Call Gemini
     // --------------------------------------------------
 
     console.log("\nCalling Gemini...");
@@ -318,7 +431,7 @@ Return JSON array only.
     );
 
     // --------------------------------------------------
-    // 6. Validate API response
+    // 9. Validate API response
     // --------------------------------------------------
 
     if (!response.ok) {
@@ -335,7 +448,7 @@ Return JSON array only.
         await response.json();
 
     // --------------------------------------------------
-    // 7. Extract Gemini response
+    // 10. Extract Gemini response
     // --------------------------------------------------
 
     const content =
@@ -365,7 +478,7 @@ Return JSON array only.
     );
 
     // --------------------------------------------------
-    // 8. Parse JSON
+    // 11. Parse JSON
     // --------------------------------------------------
 
     let scenarios: any;
@@ -389,7 +502,7 @@ Return JSON array only.
     }
 
     // --------------------------------------------------
-    // 9. Validate scenario array
+    // 12. Validate scenario array
     // --------------------------------------------------
 
     if (!Array.isArray(scenarios)) {
@@ -419,7 +532,7 @@ Return JSON array only.
     }
 
     // --------------------------------------------------
-    // 10. Validate scenario structure
+    // 13. Validate scenario structure
     // --------------------------------------------------
 
     const requiredFields = [
@@ -454,6 +567,16 @@ Return JSON array only.
         const scenario =
             scenarios[index];
 
+        if (
+            !scenario ||
+            typeof scenario !== "object" ||
+            Array.isArray(scenario)
+        ) {
+            throw new Error(
+                `Scenario at index ${index} must be a JSON object.`
+            );
+        }
+
         const expectedId =
             `TC${String(index + 1).padStart(3, "0")}`;
 
@@ -479,11 +602,40 @@ Return JSON array only.
         ) {
 
             if (
-                !(field in scenario)
+                !Object.prototype.hasOwnProperty.call(
+                    scenario,
+                    field
+                )
             ) {
 
                 throw new Error(
                     `Scenario ${scenario.id} is missing required field: ${field}`
+                );
+            }
+        }
+
+        // ----------------------------------------------
+        // Validate text fields
+        // ----------------------------------------------
+
+        const textFields = [
+            "id",
+            "title",
+            "description",
+            "expectedResult"
+        ];
+
+        for (
+            const field of textFields
+        ) {
+
+            if (
+                typeof scenario[field] !== "string" ||
+                scenario[field].trim() === ""
+            ) {
+
+                throw new Error(
+                    `Scenario ${scenario.id}: ${field} must be a non-empty string.`
                 );
             }
         }
@@ -507,7 +659,6 @@ Return JSON array only.
         // Validate arrays
         // ----------------------------------------------
 
-        
         if (
             !Array.isArray(
                 scenario.preconditions
@@ -551,23 +702,35 @@ Return JSON array only.
         }
 
         // ----------------------------------------------
-        // Validate expected result
+        // Validate array contents
         // ----------------------------------------------
 
-        if (
-            typeof scenario.expectedResult !==
-                "string" ||
-            scenario.expectedResult.trim() === ""
+        const arrayFields = [
+            "preconditions",
+            "testData",
+            "steps"
+        ];
+
+        for (
+            const field of arrayFields
         ) {
 
-            throw new Error(
-                `Scenario ${scenario.id}: expectedResult cannot be empty.`
-            );
+            if (
+                !scenario[field].every(
+                    (item: unknown) =>
+                        typeof item === "string"
+                )
+            ) {
+
+                throw new Error(
+                    `Scenario ${scenario.id}: ${field} must contain only strings.`
+                );
+            }
         }
     }
 
     // --------------------------------------------------
-    // 11. Save output
+    // 14. Save output
     // --------------------------------------------------
 
     const outputDirectory =
@@ -601,7 +764,7 @@ Return JSON array only.
     );
 
     // --------------------------------------------------
-    // 12. Display scenarios
+    // 15. Display scenarios
     // --------------------------------------------------
 
     console.log(

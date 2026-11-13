@@ -1,71 +1,520 @@
 {
   "application": "SauceDemo",
-  "requirement": "The user should be able to search for a product.\r\n\r\nWhen the user enters a valid product search term, matching products should be displayed.\r\n\r\nWhen the user searches for a product that does not exist, an appropriate no-results message should be displayed.",
-  "scenarioCount": 2,
+  "requirement": "The user should be able to search for a product.\n\nWhen the user enters a valid product search term, matching products should be displayed.\n\nSearch should be case-insensitive and support partial matching.\n\nSearch should check both product name and product description.\n\nDisplay 10 products per page when multiple products match.\n\nWhen the user searches for a product that does not exist, display:\n\"No products found\".",
+  "scenarioCount": 11,
   "evidence": {
     "applicationConfigurationAvailable": true,
     "discoveryEvidenceAvailable": true,
     "pagesInspected": 2,
-    "searchRelatedElementsFound": 0,
+    "explicitCapabilities": [
+      "search",
+      "pagination"
+    ],
+    "inferredCapabilities": [
+      "productListing"
+    ],
+    "requiredCapabilities": [
+      "search",
+      "pagination",
+      "productListing"
+    ],
+    "capabilityAssessments": [
+      {
+        "capability": "authentication",
+        "requiredByRequirement": false,
+        "potentialControlsFound": true,
+        "status": "POTENTIAL_CONTROLS_FOUND",
+        "confidence": "MEDIUM",
+        "evidence": [
+          "https://www.saucedemo.com/: div text=\"Accepted usernames are:standard_userlocked_out_userproblem_userperformance_glitch_usererror_uservisual_userPassword for all users:secret_sauce\" testId=\"login-container\" class=\"login_wrapper\"",
+          "https://www.saucedemo.com/: form",
+          "https://www.saucedemo.com/: input placeholder=\"Username\" name=\"user-name\" testId=\"username\" class=\"input_error form_input\"",
+          "https://www.saucedemo.com/: input placeholder=\"Password\" name=\"password\" testId=\"password\" class=\"input_error form_input\"",
+          "https://www.saucedemo.com/: input name=\"login-button\" testId=\"login-button\" class=\"submit-button btn_action\"",
+          "https://www.saucedemo.com/: div text=\"Accepted usernames are:standard_userlocked_out_userproblem_userperformance_glitch_usererror_uservisual_userPassword for all users:secret_sauce\" testId=\"login-credentials-container\" class=\"login_credentials_wrap\"",
+          "https://www.saucedemo.com/: div text=\"Accepted usernames are:standard_userlocked_out_userproblem_userperformance_glitch_usererror_uservisual_user\" testId=\"login-credentials\" class=\"login_credentials\"",
+          "https://www.saucedemo.com/: div text=\"Password for all users:secret_sauce\" testId=\"login-password\" class=\"login_password\"",
+          "https://www.saucedemo.com/: Password input detected."
+        ],
+        "behaviorVerified": false,
+        "note": "Potential controls or page evidence were found. The capability's actual behavior has not been tested."
+      },
+      {
+        "capability": "productListing",
+        "requiredByRequirement": false,
+        "potentialControlsFound": true,
+        "status": "POTENTIAL_CONTROLS_FOUND",
+        "confidence": "MEDIUM",
+        "evidence": [
+          "https://www.saucedemo.com/inventory.html: span text=\"Products\" testId=\"title\" class=\"title\"",
+          "https://www.saucedemo.com/inventory.html: select text=\"Name (A to Z)Name (Z to A)Price (low to high)Price (high to low)\" testId=\"product-sort-container\" class=\"product_sort_container\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cartSauce Labs Bike LightA red lig\" testId=\"inventory-container\" class=\"inventory_container\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cartSauce Labs Bike LightA red lig\" testId=\"inventory-list\" class=\"inventory_list\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cart\" testId=\"inventory-item\" class=\"inventory_item\"",
+          "https://www.saucedemo.com/inventory.html: a testId=\"item-4-img-link\"",
+          "https://www.saucedemo.com/inventory.html: img testId=\"inventory-item-sauce-labs-backpack-img\" class=\"inventory_item_img\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cart\" testId=\"inventory-item-description\" class=\"inventory_item_description\"",
+          "https://www.saucedemo.com/inventory.html: a text=\"Sauce Labs Backpack\" testId=\"item-4-title-link\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpack\" testId=\"inventory-item-name\" class=\"inventory_item_name \"",
+          "https://www.saucedemo.com/inventory.html: div text=\"carry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.\" testId=\"inventory-item-desc\" class=\"inventory_item_desc\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"$29.99\" testId=\"inventory-item-price\" class=\"inventory_item_price\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Bike LightA red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included.$9.99Add to cart\" testId=\"inventory-item\" class=\"inventory_item\"",
+          "https://www.saucedemo.com/inventory.html: a testId=\"item-0-img-link\"",
+          "https://www.saucedemo.com/inventory.html: img testId=\"inventory-item-sauce-labs-bike-light-img\" class=\"inventory_item_img\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Bike LightA red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included.$9.99Add to cart\" testId=\"inventory-item-description\" class=\"inventory_item_description\"",
+          "https://www.saucedemo.com/inventory.html: a text=\"Sauce Labs Bike Light\" testId=\"item-0-title-link\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Bike Light\" testId=\"inventory-item-name\" class=\"inventory_item_name \"",
+          "https://www.saucedemo.com/inventory.html: div text=\"A red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included.\" testId=\"inventory-item-desc\" class=\"inventory_item_desc\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"$9.99\" testId=\"inventory-item-price\" class=\"inventory_item_price\""
+        ],
+        "behaviorVerified": false,
+        "note": "Potential controls or page evidence were found. The capability's actual behavior has not been tested."
+      },
+      {
+        "capability": "search",
+        "requiredByRequirement": true,
+        "potentialControlsFound": false,
+        "status": "NOT_DETECTED_ON_INSPECTED_PAGES",
+        "confidence": "NOT_ASSESSED",
+        "evidence": [],
+        "behaviorVerified": false,
+        "note": "No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability."
+      },
+      {
+        "capability": "filtering",
+        "requiredByRequirement": false,
+        "potentialControlsFound": false,
+        "status": "NOT_DETECTED_ON_INSPECTED_PAGES",
+        "confidence": "NOT_ASSESSED",
+        "evidence": [],
+        "behaviorVerified": false,
+        "note": "No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability."
+      },
+      {
+        "capability": "sorting",
+        "requiredByRequirement": false,
+        "potentialControlsFound": true,
+        "status": "POTENTIAL_CONTROLS_FOUND",
+        "confidence": "MEDIUM",
+        "evidence": [
+          "https://www.saucedemo.com/inventory.html: header text=\"Open MenuAll ItemsDynamic CatalogAboutLogoutReset App StateClose MenuSwag LabsProductsName (A to Z)Name (A to Z)Name (Z to A)Price (low to high)Price (high to low)\" testId=\"header-container\" class=\"header_container\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"ProductsName (A to Z)Name (A to Z)Name (Z to A)Price (low to high)Price (high to low)\" testId=\"secondary-header\" class=\"header_secondary_container\"",
+          "https://www.saucedemo.com/inventory.html: select text=\"Name (A to Z)Name (Z to A)Price (low to high)Price (high to low)\" testId=\"product-sort-container\" class=\"product_sort_container\""
+        ],
+        "behaviorVerified": false,
+        "note": "Potential controls or page evidence were found. The capability's actual behavior has not been tested."
+      },
+      {
+        "capability": "pagination",
+        "requiredByRequirement": true,
+        "potentialControlsFound": false,
+        "status": "NOT_DETECTED_ON_INSPECTED_PAGES",
+        "confidence": "NOT_ASSESSED",
+        "evidence": [],
+        "behaviorVerified": false,
+        "note": "No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability."
+      },
+      {
+        "capability": "cart",
+        "requiredByRequirement": false,
+        "potentialControlsFound": true,
+        "status": "POTENTIAL_CONTROLS_FOUND",
+        "confidence": "MEDIUM",
+        "evidence": [
+          "https://www.saucedemo.com/inventory.html: a testId=\"shopping-cart-link\" class=\"shopping_cart_link\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cart\" testId=\"inventory-item\" class=\"inventory_item\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cart\" testId=\"inventory-item-description\" class=\"inventory_item_description\"",
+          "https://www.saucedemo.com/inventory.html: button text=\"Add to cart\" name=\"add-to-cart-sauce-labs-backpack\" testId=\"add-to-cart-sauce-labs-backpack\" class=\"btn btn_primary btn_small btn_inventory \"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Bike LightA red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included.$9.99Add to cart\" testId=\"inventory-item\" class=\"inventory_item\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Bike LightA red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included.$9.99Add to cart\" testId=\"inventory-item-description\" class=\"inventory_item_description\"",
+          "https://www.saucedemo.com/inventory.html: button text=\"Add to cart\" name=\"add-to-cart-sauce-labs-bike-light\" testId=\"add-to-cart-sauce-labs-bike-light\" class=\"btn btn_primary btn_small btn_inventory \"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Bolt T-ShirtGet your testing superhero on with the Sauce Labs bolt T-shirt. From American Apparel, 100% ringspun combed cotton, heather gray with red bolt.$15.99Add to cart\" testId=\"inventory-item\" class=\"inventory_item\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Bolt T-ShirtGet your testing superhero on with the Sauce Labs bolt T-shirt. From American Apparel, 100% ringspun combed cotton, heather gray with red bolt.$15.99Add to cart\" testId=\"inventory-item-description\" class=\"inventory_item_description\"",
+          "https://www.saucedemo.com/inventory.html: button text=\"Add to cart\" name=\"add-to-cart-sauce-labs-bolt-t-shirt\" testId=\"add-to-cart-sauce-labs-bolt-t-shirt\" class=\"btn btn_primary btn_small btn_inventory \"",
+          "https://www.saucedemo.com/inventory.html: button text=\"Add to cart\" name=\"add-to-cart-sauce-labs-fleece-jacket\" testId=\"add-to-cart-sauce-labs-fleece-jacket\" class=\"btn btn_primary btn_small btn_inventory \"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs OnesieRib snap infant onesie for the junior automation engineer in development. Reinforced 3-snap bottom closure, two-needle hemmed sleeved and bottom won't unravel.$7.99Add to cart\" testId=\"inventory-item\" class=\"inventory_item\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs OnesieRib snap infant onesie for the junior automation engineer in development. Reinforced 3-snap bottom closure, two-needle hemmed sleeved and bottom won't unravel.$7.99Add to cart\" testId=\"inventory-item-description\" class=\"inventory_item_description\"",
+          "https://www.saucedemo.com/inventory.html: button text=\"Add to cart\" name=\"add-to-cart-sauce-labs-onesie\" testId=\"add-to-cart-sauce-labs-onesie\" class=\"btn btn_primary btn_small btn_inventory \"",
+          "https://www.saucedemo.com/inventory.html: button text=\"Add to cart\" name=\"add-to-cart-test.allthethings()-t-shirt-(red)\" testId=\"add-to-cart-test.allthethings()-t-shirt-(red)\" class=\"btn btn_primary btn_small btn_inventory \""
+        ],
+        "behaviorVerified": false,
+        "note": "Potential controls or page evidence were found. The capability's actual behavior has not been tested."
+      },
+      {
+        "capability": "checkout",
+        "requiredByRequirement": false,
+        "potentialControlsFound": false,
+        "status": "NOT_DETECTED_ON_INSPECTED_PAGES",
+        "confidence": "NOT_ASSESSED",
+        "evidence": [],
+        "behaviorVerified": false,
+        "note": "No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability."
+      },
+      {
+        "capability": "forms",
+        "requiredByRequirement": false,
+        "potentialControlsFound": true,
+        "status": "POTENTIAL_CONTROLS_FOUND",
+        "confidence": "MEDIUM",
+        "evidence": [
+          "https://www.saucedemo.com/: form",
+          "https://www.saucedemo.com/: input name=\"login-button\" testId=\"login-button\" class=\"submit-button btn_action\"",
+          "https://www.saucedemo.com/: 1 form element(s) detected."
+        ],
+        "behaviorVerified": false,
+        "note": "Potential controls or page evidence were found. The capability's actual behavior has not been tested."
+      },
+      {
+        "capability": "navigation",
+        "requiredByRequirement": false,
+        "potentialControlsFound": true,
+        "status": "POTENTIAL_CONTROLS_FOUND",
+        "confidence": "MEDIUM",
+        "evidence": [
+          "https://www.saucedemo.com/inventory.html: button text=\"Open Menu\"",
+          "https://www.saucedemo.com/inventory.html: img testId=\"open-menu\" class=\"bm-icon\"",
+          "https://www.saucedemo.com/inventory.html: 20 link(s) detected."
+        ],
+        "behaviorVerified": false,
+        "note": "Potential controls or page evidence were found. The capability's actual behavior has not been tested."
+      }
+    ],
+    "capabilityResults": [
+      {
+        "capability": "search",
+        "state": "NOT_DETECTED",
+        "requiredByRequirement": true,
+        "controlsDetected": false,
+        "behaviorVerified": false,
+        "evidence": [],
+        "note": "No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability."
+      },
+      {
+        "capability": "pagination",
+        "state": "NOT_DETECTED",
+        "requiredByRequirement": true,
+        "controlsDetected": false,
+        "behaviorVerified": false,
+        "evidence": [],
+        "note": "No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability."
+      },
+      {
+        "capability": "productListing",
+        "state": "DETECTED_UNVERIFIED",
+        "requiredByRequirement": false,
+        "controlsDetected": true,
+        "behaviorVerified": false,
+        "evidence": [
+          "https://www.saucedemo.com/inventory.html: span text=\"Products\" testId=\"title\" class=\"title\"",
+          "https://www.saucedemo.com/inventory.html: select text=\"Name (A to Z)Name (Z to A)Price (low to high)Price (high to low)\" testId=\"product-sort-container\" class=\"product_sort_container\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cartSauce Labs Bike LightA red lig\" testId=\"inventory-container\" class=\"inventory_container\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cartSauce Labs Bike LightA red lig\" testId=\"inventory-list\" class=\"inventory_list\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cart\" testId=\"inventory-item\" class=\"inventory_item\"",
+          "https://www.saucedemo.com/inventory.html: a testId=\"item-4-img-link\"",
+          "https://www.saucedemo.com/inventory.html: img testId=\"inventory-item-sauce-labs-backpack-img\" class=\"inventory_item_img\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cart\" testId=\"inventory-item-description\" class=\"inventory_item_description\"",
+          "https://www.saucedemo.com/inventory.html: a text=\"Sauce Labs Backpack\" testId=\"item-4-title-link\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpack\" testId=\"inventory-item-name\" class=\"inventory_item_name \"",
+          "https://www.saucedemo.com/inventory.html: div text=\"carry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.\" testId=\"inventory-item-desc\" class=\"inventory_item_desc\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"$29.99\" testId=\"inventory-item-price\" class=\"inventory_item_price\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Bike LightA red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included.$9.99Add to cart\" testId=\"inventory-item\" class=\"inventory_item\"",
+          "https://www.saucedemo.com/inventory.html: a testId=\"item-0-img-link\"",
+          "https://www.saucedemo.com/inventory.html: img testId=\"inventory-item-sauce-labs-bike-light-img\" class=\"inventory_item_img\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Bike LightA red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included.$9.99Add to cart\" testId=\"inventory-item-description\" class=\"inventory_item_description\"",
+          "https://www.saucedemo.com/inventory.html: a text=\"Sauce Labs Bike Light\" testId=\"item-0-title-link\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Bike Light\" testId=\"inventory-item-name\" class=\"inventory_item_name \"",
+          "https://www.saucedemo.com/inventory.html: div text=\"A red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included.\" testId=\"inventory-item-desc\" class=\"inventory_item_desc\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"$9.99\" testId=\"inventory-item-price\" class=\"inventory_item_price\""
+        ],
+        "note": "Potential controls or page evidence were found. The capability's actual behavior has not been tested."
+      }
+    ],
     "evidenceSummary": [
-      "Inspected page \"Swag Labs\" at https://www.saucedemo.com/; captured 7 visible elements.",
+      "Inspected page \"Swag Labs\" at https://www.saucedemo.com/; captured 8 visible elements.",
       "Inspected page \"Swag Labs\" at https://www.saucedemo.com/inventory.html; captured 71 visible elements.",
-      "No search-related elements were reported on the inspected pages. This does not prove the capability is absent elsewhere."
-    ]
+      "authentication: potential controls found; behavior verified: false.",
+      "productListing: potential controls found; behavior verified: false.",
+      "search: not detected on inspected pages; behavior verified: false.",
+      "filtering: not detected on inspected pages; behavior verified: false.",
+      "sorting: potential controls found; behavior verified: false.",
+      "pagination: not detected on inspected pages; behavior verified: false.",
+      "cart: potential controls found; behavior verified: false.",
+      "checkout: not detected on inspected pages; behavior verified: false.",
+      "forms: potential controls found; behavior verified: false.",
+      "navigation: potential controls found; behavior verified: false."
+    ],
+    "searchRelatedElementsFound": 0
   },
-  "assessedAt": "2026-10-09T11:18:23.317Z",
+  "assessedAt": "2026-11-13T13:21:13.751Z",
   "status": "NEEDS_REVIEW",
   "mismatchType": "UNVERIFIED_CAPABILITY",
-  "summary": "The application inspection of SauceDemo (inventory page and login page) revealed no search-related input controls or functionality, making product search unverified based on current discovery evidence.",
+  "summary": "Required application capabilities have not been verified: search, pagination, productListing. This is an evidence gap, not confirmation that the entire application lacks those capabilities.",
   "blockers": [],
   "missingRequirements": [],
   "missingCapabilities": [
-    "Product search input and filtering functionality are not present on the inspected inventory page."
+    "search",
+    "pagination"
+  ],
+  "unverifiedCapabilities": [
+    "search",
+    "pagination",
+    "productListing"
   ],
   "missingConfiguration": [],
   "missingLocators": [
-    "Search input element locator",
-    "No-results message element locator"
+    "Search input, search action, search results container, and no-results message locators",
+    "Pagination container, next-page button, previous-page button, and current-page indicator locators"
   ],
   "automationApproach": [
-    "Browser UI automation using Playwright/Selenium once search components are implemented and available in the application."
+    "Use Playwright or Selenium with Page Object Model once search and pagination components are implemented and locators are provided.",
+    "Verify product list filtering and paging dynamically against expected data."
   ],
   "recommendations": [
-    "Verify whether the product search requirement applies to the SauceDemo application or if this application lacks search by design.",
-    "Extend page discovery to any additional pages or sub-routes if search exists outside the inventory view."
+    "Confirm whether the SauceDemo application instance supports product search and pagination or if these features belong to a different application context.",
+    "Provide specific locators and test hooks for the search input and pagination elements.",
+    "Verify required application capabilities through actual browser interaction before generating executable tests.",
+    "Treat discovered controls as potential evidence until their behavior is verified.",
+    "Do not treat capabilities missing from inspected pages as proof that the entire application lacks those features."
   ],
   "assumptions": [
-    "Assumed that the inspected pages represent the core product viewing area of the application."
+    "Assumes the application will eventually implement search and pagination features as specified in the requirements.",
+    "search: No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability.",
+    "pagination: No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability.",
+    "productListing: Potential controls or page evidence were found. The capability's actual behavior has not been tested."
   ],
   "scenarioAssessments": [
     {
       "scenarioId": "TC001",
-      "scenarioName": "Search for a product with a valid search term",
+      "scenarioName": "Search for valid product by exact name",
       "status": "NEEDS_REVIEW",
-      "reason": "No search-related elements or filtering mechanism were found on the inspected pages during discovery.",
+      "reason": "Required capability evidence is incomplete for this scenario: search. Verify the application behavior before generating executable tests.",
       "evidence": [
-        "Discovery evidence for https://www.saucedemo.com/inventory.html shows zero search-related elements."
+        "Search capability not detected on inspected pages.",
+        "search: No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability."
       ],
       "missingCapabilities": [
-        "Search input control and dynamic product filtering."
+        "search"
+      ],
+      "unverifiedCapabilities": [
+        "search"
       ],
       "recommendations": [
-        "Confirm if search functionality is implemented in the application under test."
+        "Provide search input locators once the search feature is available.",
+        "Inspect and verify the search capability before generating this scenario's executable test."
       ]
     },
     {
       "scenarioId": "TC002",
-      "scenarioName": "Search for a product that does not exist",
+      "scenarioName": "Search with case-insensitive query",
       "status": "NEEDS_REVIEW",
-      "reason": "No search-related elements or no-results message components were found on the inspected pages during discovery.",
+      "reason": "Required capability evidence is incomplete for this scenario: search. Verify the application behavior before generating executable tests.",
       "evidence": [
-        "Discovery evidence for https://www.saucedemo.com/inventory.html shows zero search-related elements."
+        "Search capability not detected on inspected pages.",
+        "search: No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability."
       ],
       "missingCapabilities": [
-        "Search input control and empty/no-results handling."
+        "search"
+      ],
+      "unverifiedCapabilities": [
+        "search"
       ],
       "recommendations": [
-        "Confirm if search functionality and empty state messages are implemented in the application under test."
+        "Verify case-insensitive search behavior once implemented.",
+        "Inspect and verify the search capability before generating this scenario's executable test."
+      ]
+    },
+    {
+      "scenarioId": "TC003",
+      "scenarioName": "Search with partial matching term",
+      "status": "NEEDS_REVIEW",
+      "reason": "Required capability evidence is incomplete for this scenario: search. Verify the application behavior before generating executable tests.",
+      "evidence": [
+        "Search capability not detected on inspected pages.",
+        "search: No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability."
+      ],
+      "missingCapabilities": [
+        "search"
+      ],
+      "unverifiedCapabilities": [
+        "search"
+      ],
+      "recommendations": [
+        "Verify partial matching behavior once implemented.",
+        "Inspect and verify the search capability before generating this scenario's executable test."
+      ]
+    },
+    {
+      "scenarioId": "TC004",
+      "scenarioName": "Search matching product description",
+      "status": "NEEDS_REVIEW",
+      "reason": "Required capability evidence is incomplete for this scenario: search. Verify the application behavior before generating executable tests.",
+      "evidence": [
+        "Search capability not detected on inspected pages.",
+        "search: No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability."
+      ],
+      "missingCapabilities": [
+        "search"
+      ],
+      "unverifiedCapabilities": [
+        "search"
+      ],
+      "recommendations": [
+        "Verify description search matching once implemented.",
+        "Inspect and verify the search capability before generating this scenario's executable test."
+      ]
+    },
+    {
+      "scenarioId": "TC005",
+      "scenarioName": "Search for non-existent product",
+      "status": "NEEDS_REVIEW",
+      "reason": "Required capability evidence is incomplete for this scenario: search. Verify the application behavior before generating executable tests.",
+      "evidence": [
+        "Search capability not detected on inspected pages.",
+        "search: No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability."
+      ],
+      "missingCapabilities": [
+        "search"
+      ],
+      "unverifiedCapabilities": [
+        "search"
+      ],
+      "recommendations": [
+        "Verify 'No products found' message handling once implemented.",
+        "Inspect and verify the search capability before generating this scenario's executable test."
+      ]
+    },
+    {
+      "scenarioId": "TC006",
+      "scenarioName": "Pagination display for multiple matching products",
+      "status": "NEEDS_REVIEW",
+      "reason": "Required capability evidence is incomplete for this scenario: search, pagination. Verify the application behavior before generating executable tests.",
+      "evidence": [
+        "Pagination capability not detected on inspected pages.",
+        "search: No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability.",
+        "pagination: No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability."
+      ],
+      "missingCapabilities": [
+        "search",
+        "pagination"
+      ],
+      "unverifiedCapabilities": [
+        "pagination",
+        "search"
+      ],
+      "recommendations": [
+        "Verify pagination controls and 10 items per page constraint once implemented.",
+        "Inspect and verify the search capability before generating this scenario's executable test.",
+        "Inspect and verify the pagination capability before generating this scenario's executable test."
+      ]
+    },
+    {
+      "scenarioId": "TC007",
+      "scenarioName": "Navigate through pagination pages",
+      "status": "NEEDS_REVIEW",
+      "reason": "Required capability evidence is incomplete for this scenario: search, pagination. Verify the application behavior before generating executable tests.",
+      "evidence": [
+        "Pagination capability not detected on inspected pages.",
+        "search: No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability.",
+        "pagination: No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability."
+      ],
+      "missingCapabilities": [
+        "search",
+        "pagination"
+      ],
+      "unverifiedCapabilities": [
+        "pagination",
+        "search"
+      ],
+      "recommendations": [
+        "Verify pagination navigation buttons once implemented.",
+        "Inspect and verify the search capability before generating this scenario's executable test.",
+        "Inspect and verify the pagination capability before generating this scenario's executable test."
+      ]
+    },
+    {
+      "scenarioId": "TC008",
+      "scenarioName": "Submit empty search query",
+      "status": "NEEDS_REVIEW",
+      "reason": "Required capability evidence is incomplete for this scenario: search, productListing. Verify the application behavior before generating executable tests.",
+      "evidence": [
+        "Search capability not detected on inspected pages.",
+        "search: No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability.",
+        "productListing: Potential controls or page evidence were found. The capability's actual behavior has not been tested."
+      ],
+      "missingCapabilities": [
+        "search"
+      ],
+      "unverifiedCapabilities": [
+        "search",
+        "productListing"
+      ],
+      "recommendations": [
+        "Verify empty query submission behavior once implemented.",
+        "Inspect and verify the search capability before generating this scenario's executable test.",
+        "Inspect and verify the productListing capability before generating this scenario's executable test."
+      ]
+    },
+    {
+      "scenarioId": "TC009",
+      "scenarioName": "Submit search query with only spaces",
+      "status": "NEEDS_REVIEW",
+      "reason": "Required capability evidence is incomplete for this scenario: search, productListing. Verify the application behavior before generating executable tests.",
+      "evidence": [
+        "Search capability not detected on inspected pages.",
+        "search: No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability.",
+        "productListing: Potential controls or page evidence were found. The capability's actual behavior has not been tested."
+      ],
+      "missingCapabilities": [
+        "search"
+      ],
+      "unverifiedCapabilities": [
+        "search",
+        "productListing"
+      ],
+      "recommendations": [
+        "Verify whitespace-only query handling once implemented.",
+        "Inspect and verify the search capability before generating this scenario's executable test.",
+        "Inspect and verify the productListing capability before generating this scenario's executable test."
+      ]
+    },
+    {
+      "scenarioId": "TC010",
+      "scenarioName": "Search with special characters and symbols",
+      "status": "NEEDS_REVIEW",
+      "reason": "Required capability evidence is incomplete for this scenario: search. Verify the application behavior before generating executable tests.",
+      "evidence": [
+        "Search capability not detected on inspected pages.",
+        "search: No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability."
+      ],
+      "missingCapabilities": [
+        "search"
+      ],
+      "unverifiedCapabilities": [
+        "search"
+      ],
+      "recommendations": [
+        "Verify special character handling in search once implemented.",
+        "Inspect and verify the search capability before generating this scenario's executable test."
+      ]
+    },
+    {
+      "scenarioId": "TC011",
+      "scenarioName": "Search with accented characters",
+      "status": "NEEDS_REVIEW",
+      "reason": "Required capability evidence is incomplete for this scenario: search. Verify the application behavior before generating executable tests.",
+      "evidence": [
+        "Search capability not detected on inspected pages.",
+        "search: No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability."
+      ],
+      "missingCapabilities": [
+        "search"
+      ],
+      "unverifiedCapabilities": [
+        "search"
+      ],
+      "recommendations": [
+        "Verify accented character handling in search once implemented.",
+        "Inspect and verify the search capability before generating this scenario's executable test."
       ]
     }
   ]

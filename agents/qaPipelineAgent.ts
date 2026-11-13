@@ -1,7 +1,7 @@
 
 import fs from "fs";
 import path from "path";
-import { exec } from "child_process";
+import { spawn } from "child_process";
 
 interface RequirementAnalysis {
   quality: string;
@@ -64,8 +64,14 @@ function readJsonFile<T>(filePath: string): T {
     throw new Error(`Required file not found: ${filePath}`);
   }
 
-  return JSON.parse(fs.readFileSync(filePath, "utf8")) as T;
+  return JSON.parse(
+    fs.readFileSync(filePath, "utf8")
+  ) as T;
 }
+
+// =================================
+// COMMAND EXECUTION
+// =================================
 
 function runCommand(command: string): Promise<boolean> {
   return new Promise((resolve) => {
@@ -73,31 +79,37 @@ function runCommand(command: string): Promise<boolean> {
     console.log(`RUNNING: ${command}`);
     console.log("=================================\n");
 
-    exec(
-      command,
-      {
-        cwd: ROOT,
-        maxBuffer: 20 * 1024 * 1024,
-        timeout: 10 * 60 * 1000,
-        env: { ...process.env }
-      },
-      (error, stdout, stderr) => {
-        if (stdout) console.log(stdout);
-        if (stderr) console.log(stderr);
+    const child = spawn(command, {
+      cwd: ROOT,
+      env: { ...process.env },
+      stdio: "inherit",
+      shell: true,
+      timeout: 10 * 60 * 1000
+    });
 
-        if (error) {
-          console.error(`Command failed: ${command}`);
-          console.error(`Exit code: ${error.code ?? "unknown"}`);
-          resolve(false);
-          return;
-        }
+    child.on("error", (error) => {
+      console.error(`Command failed: ${command}`);
+      console.error(error.message);
+      resolve(false);
+    });
 
-        console.log(`Command completed successfully: ${command}`);
-        resolve(true);
+    child.on("close", (code) => {
+      if (code !== 0) {
+        console.error(`Command failed: ${command}`);
+        console.error(`Exit code: ${code ?? "unknown"}`);
+        resolve(false);
+        return;
       }
-    );
+
+      console.log(`Command completed successfully: ${command}`);
+      resolve(true);
+    });
   });
 }
+
+// =================================
+// AGENT EXECUTION
+// =================================
 
 async function runAgent(
   fileName: string,
@@ -119,6 +131,10 @@ async function runAgent(
     throw new Error(`${description} failed.`);
   }
 }
+
+// =================================
+// FEASIBILITY VALIDATION
+// =================================
 
 function validateFeasibility(
   result: FeasibilityResult
@@ -145,6 +161,10 @@ function validateFeasibility(
     throw new Error("Feasibility summary is missing.");
   }
 }
+
+// =================================
+// FEASIBILITY STOP
+// =================================
 
 function stopForFeasibility(
   result: FeasibilityResult
@@ -177,6 +197,39 @@ function stopForFeasibility(
   );
 }
 
+// =================================
+// GENERATED TEST DISCOVERY
+// =================================
+
+function findSpecFiles(directory: string): string[] {
+  if (!fileExists(directory)) {
+    return [];
+  }
+
+  const found: string[] = [];
+
+  for (const entry of fs.readdirSync(directory, {
+    withFileTypes: true
+  })) {
+    const fullPath = path.join(directory, entry.name);
+
+    if (entry.isDirectory()) {
+      found.push(...findSpecFiles(fullPath));
+    } else if (
+      entry.isFile() &&
+      /\.spec\.(ts|js)$/.test(entry.name)
+    ) {
+      found.push(fullPath);
+    }
+  }
+
+  return found;
+}
+
+// =================================
+// MAIN QA PIPELINE
+// =================================
+
 async function runQAPipeline(): Promise<void> {
   const startedAt = Date.now();
 
@@ -197,8 +250,13 @@ async function runQAPipeline(): Promise<void> {
       path.join(OUTPUT, "requirement-analysis.json")
     );
 
-  console.log(`Requirement Quality: ${requirementAnalysis.quality}`);
-  console.log(`Risk Level: ${requirementAnalysis.riskLevel}`);
+  console.log(
+    `Requirement Quality: ${requirementAnalysis.quality}`
+  );
+
+  console.log(
+    `Risk Level: ${requirementAnalysis.riskLevel}`
+  );
 
   // STEP 2: Human clarification
   console.log("\nSTEP 2: Human-in-the-Loop Clarification");
@@ -233,13 +291,18 @@ async function runQAPipeline(): Promise<void> {
     ? scenarios
     : scenarios?.scenarios ?? scenarios?.testScenarios;
 
-  if (!Array.isArray(scenarioList) || scenarioList.length === 0) {
+  if (
+    !Array.isArray(scenarioList) ||
+    scenarioList.length === 0
+  ) {
     throw new Error(
       "No valid test scenarios were generated."
     );
   }
 
-  console.log(`Scenarios generated: ${scenarioList.length}`);
+  console.log(
+    `Scenarios generated: ${scenarioList.length}`
+  );
 
   // STEP 3.5: Application discovery
   console.log("\nSTEP 3.5: Application Discovery");
@@ -262,11 +325,14 @@ async function runQAPipeline(): Promise<void> {
       );
     }
 
-    console.log("Application discovery evidence is available.");
+    console.log(
+      "Application discovery evidence is available."
+    );
   } else {
     console.warn(
       "Application discovery agent is not implemented yet."
     );
+
     console.warn(
       "Feasibility will be assessed using existing configuration and evidence."
     );
@@ -287,7 +353,10 @@ async function runQAPipeline(): Promise<void> {
 
   validateFeasibility(feasibility);
 
-  console.log(`\nFeasibility status: ${feasibility.status}`);
+  console.log(
+    `\nFeasibility status: ${feasibility.status}`
+  );
+
   console.log(feasibility.summary);
 
   /*
@@ -302,6 +371,7 @@ async function runQAPipeline(): Promise<void> {
    * Other statuses:
    * Resolve clarification, configuration, review, or blockers.
    */
+
   if (feasibility.status !== "READY") {
     stopForFeasibility(feasibility);
   }
@@ -319,33 +389,12 @@ async function runQAPipeline(): Promise<void> {
    * The generator should create one or more *.spec.ts files
    * under tests/generated/. Do not assume a login-specific name.
    */
+
   const generatedDirectory =
     path.join(ROOT, "tests", "generated");
 
-  function findSpecFiles(directory: string): string[] {
-    if (!fileExists(directory)) return [];
-
-    const found: string[] = [];
-
-    for (const entry of fs.readdirSync(directory, {
-      withFileTypes: true
-    })) {
-      const fullPath = path.join(directory, entry.name);
-
-      if (entry.isDirectory()) {
-        found.push(...findSpecFiles(fullPath));
-      } else if (
-        entry.isFile() &&
-        /\.spec\.(ts|js)$/.test(entry.name)
-      ) {
-        found.push(fullPath);
-      }
-    }
-
-    return found;
-  }
-
-  const generatedTests = findSpecFiles(generatedDirectory);
+  const generatedTests =
+    findSpecFiles(generatedDirectory);
 
   if (generatedTests.length === 0) {
     throw new Error(
@@ -353,7 +402,9 @@ async function runQAPipeline(): Promise<void> {
     );
   }
 
-  console.log(`Generated test files: ${generatedTests.length}`);
+  console.log(
+    `Generated test files: ${generatedTests.length}`
+  );
 
   generatedTests.forEach(file => {
     console.log(`- ${path.relative(ROOT, file)}`);
@@ -400,6 +451,7 @@ async function runQAPipeline(): Promise<void> {
     console.warn(
       error instanceof Error ? error.message : error
     );
+
     console.warn(
       "Continuing; failure analysis is not available."
     );
@@ -434,21 +486,42 @@ async function runQAPipeline(): Promise<void> {
     path.join(OUTPUT, "ai-test-report.html");
 
   if (!fileExists(htmlReportFile)) {
-    throw new Error("HTML report was not generated.");
+    throw new Error(
+      "HTML report was not generated."
+    );
   }
 
-  const report = readJsonFile<TestReport>(reportFile);
+  const report =
+    readJsonFile<TestReport>(reportFile);
 
   console.log("\n=================================");
   console.log("       AI QA PIPELINE FINISHED");
   console.log("=================================");
 
-  console.log(`Overall status: ${report.overallStatus}`);
-  console.log(`Scenarios: ${report.summary.totalScenarios}`);
-  console.log(`Executions: ${report.summary.totalExecutions}`);
-  console.log(`Passed: ${report.summary.passedTests}`);
-  console.log(`Failed: ${report.summary.failedTests}`);
-  console.log(`Duration: ${report.summary.duration}`);
+  console.log(
+    `Overall status: ${report.overallStatus}`
+  );
+
+  console.log(
+    `Scenarios: ${report.summary.totalScenarios}`
+  );
+
+  console.log(
+    `Executions: ${report.summary.totalExecutions}`
+  );
+
+  console.log(
+    `Passed: ${report.summary.passedTests}`
+  );
+
+  console.log(
+    `Failed: ${report.summary.failedTests}`
+  );
+
+  console.log(
+    `Duration: ${report.summary.duration}`
+  );
+
   console.log(
     `Pipeline time: ${((Date.now() - startedAt) / 1000).toFixed(1)}s`
   );
@@ -464,6 +537,10 @@ async function runQAPipeline(): Promise<void> {
   console.log("- output/ai-test-report.json");
   console.log("- output/ai-test-report.html");
 }
+
+// =================================
+// PIPELINE ENTRY POINT
+// =================================
 
 runQAPipeline().catch(error => {
   console.error("\n=================================");

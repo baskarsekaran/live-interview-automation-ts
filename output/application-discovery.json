@@ -1,56 +1,225 @@
 {
-  "generatedAt": "2026-10-09T11:18:10.999Z",
+  "generatedAt": "2026-11-13T13:19:25.974Z",
   "application": {
     "name": "SauceDemo",
     "baseUrl": "https://www.saucedemo.com"
   },
-  "requirement": "The user should be able to search for a product.\r\n\r\nWhen the user enters a valid product search term, matching products should be displayed.\r\n\r\nWhen the user searches for a product that does not exist, an appropriate no-results message should be displayed.",
+  "requirement": "The user should be able to search for a product.\n\nWhen the user enters a valid product search term, matching products should be displayed.\n\nSearch should be case-insensitive and support partial matching.\n\nSearch should check both product name and product description.\n\nDisplay 10 products per page when multiple products match.\n\nWhen the user searches for a product that does not exist, display:\n\"No products found\".",
   "scenarios": [
     {
       "id": "TC001",
-      "title": "Search for a product with a valid search term",
+      "title": "Search for valid product by exact name",
       "type": "Positive",
-      "description": "Validate that matching products are displayed when a valid product search term is entered.",
+      "description": "Verify that searching for an exact product name displays matching products.",
       "preconditions": [
-        "The user is on the product search page"
+        "Products exist in the application"
       ],
       "testData": [
         "Backpack"
       ],
       "steps": [
-        "Enter a valid product search term in the search input",
-        "Trigger the search"
+        "Navigate to the product search feature",
+        "Enter 'Backpack' into the search input field",
+        "Submit the search"
       ],
-      "expectedResult": "Matching products corresponding to the search term are displayed"
+      "expectedResult": "Matching products containing 'Backpack' in the name or description are displayed"
     },
     {
       "id": "TC002",
-      "title": "Search for a product that does not exist",
-      "type": "Negative",
-      "description": "Validate that an appropriate no-results message is displayed when searching for a non-existent product.",
+      "title": "Search with case-insensitive query",
+      "type": "Positive",
+      "description": "Verify that search is case-insensitive for product names and descriptions.",
       "preconditions": [
-        "The user is on the product search page"
+        "A product with the name 'Bike Light' exists"
+      ],
+      "testData": [
+        "bIkE LiGhT"
+      ],
+      "steps": [
+        "Navigate to the product search feature",
+        "Enter 'bIkE LiGhT' into the search input field",
+        "Submit the search"
+      ],
+      "expectedResult": "Matching products are displayed regardless of the casing used in the query"
+    },
+    {
+      "id": "TC003",
+      "title": "Search with partial matching term",
+      "type": "Positive",
+      "description": "Verify that search supports partial matching against product names and descriptions.",
+      "preconditions": [
+        "A product containing 'Jacket' exists"
+      ],
+      "testData": [
+        "Jack"
+      ],
+      "steps": [
+        "Navigate to the product search feature",
+        "Enter 'Jack' into the search input field",
+        "Submit the search"
+      ],
+      "expectedResult": "Products containing the partial term 'Jack' are displayed"
+    },
+    {
+      "id": "TC004",
+      "title": "Search matching product description",
+      "type": "Positive",
+      "description": "Verify that the search checks product descriptions as well as product names.",
+      "preconditions": [
+        "A product description contains the unique term 'water-resistant'"
+      ],
+      "testData": [
+        "water-resistant"
+      ],
+      "steps": [
+        "Navigate to the product search feature",
+        "Enter 'water-resistant' into the search input field",
+        "Submit the search"
+      ],
+      "expectedResult": "The product whose description contains 'water-resistant' is displayed in the results"
+    },
+    {
+      "id": "TC005",
+      "title": "Search for non-existent product",
+      "type": "Negative",
+      "description": "Verify that searching for a non-existent product displays the correct 'No products found' message.",
+      "preconditions": [
+        "Products exist in the application"
       ],
       "testData": [
         "NonExistentProduct12345"
       ],
       "steps": [
-        "Enter a non-existent product search term in the search input",
-        "Trigger the search"
+        "Navigate to the product search feature",
+        "Enter 'NonExistentProduct12345' into the search input field",
+        "Submit the search"
       ],
-      "expectedResult": "An appropriate no-results message is displayed to the user"
+      "expectedResult": "The message 'No products found' is displayed"
+    },
+    {
+      "id": "TC006",
+      "title": "Pagination display for multiple matching products",
+      "type": "Positive",
+      "description": "Verify that pagination displays 10 products per page with pagination controls below the results.",
+      "preconditions": [
+        "More than 10 products match a broad search query"
+      ],
+      "testData": [
+        "a"
+      ],
+      "steps": [
+        "Navigate to the product search feature",
+        "Enter a search query that returns more than 10 results",
+        "Submit the search",
+        "Observe the results area and pagination controls"
+      ],
+      "expectedResult": "Exactly 10 products are displayed on the first page, and pagination controls with Previous and Next buttons and current page number are displayed below"
+    },
+    {
+      "id": "TC007",
+      "title": "Navigate through pagination pages",
+      "type": "Positive",
+      "description": "Verify the user can use pagination controls to navigate to the next page and previous page.",
+      "preconditions": [
+        "A search query matching more than 10 products has been executed"
+      ],
+      "testData": [
+        "a"
+      ],
+      "steps": [
+        "Click the 'Next' pagination button",
+        "Observe the displayed products",
+        "Click the 'Previous' pagination button",
+        "Observe the displayed products"
+      ],
+      "expectedResult": "Clicking 'Next' displays the next set of matching products and updates the page number, and clicking 'Previous' returns to the prior page"
+    },
+    {
+      "id": "TC008",
+      "title": "Submit empty search query",
+      "type": "Alternate",
+      "description": "Verify that submitting an empty search query keeps the complete product list visible in its default order without showing 'No products found'.",
+      "preconditions": [
+        "Products are displayed on the page"
+      ],
+      "testData": [
+        ""
+      ],
+      "steps": [
+        "Navigate to the product search feature",
+        "Leave the search input field empty",
+        "Submit the search"
+      ],
+      "expectedResult": "The complete product list remains visible in its existing default order, and 'No products found' is not displayed"
+    },
+    {
+      "id": "TC009",
+      "title": "Submit search query with only spaces",
+      "type": "Alternate",
+      "description": "Verify that submitting a search query containing only spaces trims the input, does not perform a search, and keeps the complete product list visible.",
+      "preconditions": [
+        "Products are displayed on the page"
+      ],
+      "testData": [
+        "     "
+      ],
+      "steps": [
+        "Navigate to the product search feature",
+        "Enter multiple spaces into the search input field",
+        "Submit the search"
+      ],
+      "expectedResult": "Leading and trailing spaces are trimmed, no search is performed, the complete product list remains visible, and 'No products found' is not displayed"
+    },
+    {
+      "id": "TC010",
+      "title": "Search with special characters and symbols",
+      "type": "Validation",
+      "description": "Verify that special characters and symbols are treated as normal text without causing errors or executing code.",
+      "preconditions": [
+        "Products exist in the application"
+      ],
+      "testData": [
+        "!@#$%^&*()"
+      ],
+      "steps": [
+        "Navigate to the product search feature",
+        "Enter '!@#$%^&*()' into the search input field",
+        "Submit the search"
+      ],
+      "expectedResult": "Special characters are treated safely as normal text, the application does not error out, and either matching products or 'No products found' is displayed appropriately"
+    },
+    {
+      "id": "TC011",
+      "title": "Search with accented characters",
+      "type": "Validation",
+      "description": "Verify that accented characters are handled safely and matched case-insensitively.",
+      "preconditions": [
+        "Products exist in the application"
+      ],
+      "testData": [
+        "Café"
+      ],
+      "steps": [
+        "Navigate to the product search feature",
+        "Enter 'Café' into the search input field",
+        "Submit the search"
+      ],
+      "expectedResult": "Accented characters are handled safely and matched correctly without application errors"
     }
   ],
   "login": {
     "attempted": true,
     "success": true,
-    "message": "Login appears successful; inspecting the resulting page."
+    "message": "Login appears successful; inspecting authenticated pages."
   },
   "scope": {
-    "pagesInspected": 1,
+    "pagesInspected": 2,
     "initialPageInspected": true,
     "authenticatedPageInspected": true,
-    "linksFollowed": false
+    "linksFollowed": false,
+    "routesCrawled": false,
+    "interactiveBehaviorTested": false,
+    "maximumPagesToInspect": 10
   },
   "initialPage": {
     "url": "https://www.saucedemo.com/",
@@ -68,6 +237,26 @@
         "id": null,
         "testId": "login-container",
         "href": null,
+        "title": null,
+        "className": "login_wrapper",
+        "autocomplete": null,
+        "visible": true,
+        "enabled": true
+      },
+      {
+        "tag": "form",
+        "text": "",
+        "role": null,
+        "accessibleLabel": "Login",
+        "placeholder": null,
+        "name": null,
+        "type": null,
+        "id": null,
+        "testId": null,
+        "href": null,
+        "title": null,
+        "className": "",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -82,6 +271,9 @@
         "id": "user-name",
         "testId": "username",
         "href": null,
+        "title": null,
+        "className": "input_error form_input",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -96,6 +288,9 @@
         "id": "password",
         "testId": "password",
         "href": null,
+        "title": null,
+        "className": "input_error form_input",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -110,6 +305,9 @@
         "id": "login-button",
         "testId": "login-button",
         "href": null,
+        "title": null,
+        "className": "submit-button btn_action",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -124,6 +322,9 @@
         "id": null,
         "testId": "login-credentials-container",
         "href": null,
+        "title": null,
+        "className": "login_credentials_wrap",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -138,6 +339,9 @@
         "id": "login_credentials",
         "testId": "login-credentials",
         "href": null,
+        "title": null,
+        "className": "login_credentials",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -152,10 +356,14 @@
         "id": null,
         "testId": "login-password",
         "href": null,
+        "title": null,
+        "className": "login_password",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       }
     ],
+    "discoveredLinks": [],
     "elementCounts": {
       "inputs": 3,
       "buttons": 0,
@@ -181,6 +389,9 @@
         "id": "header_container",
         "testId": "header-container",
         "href": null,
+        "title": null,
+        "className": "header_container",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -195,6 +406,9 @@
         "id": null,
         "testId": "primary-header",
         "href": null,
+        "title": null,
+        "className": "primary_header",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -209,6 +423,9 @@
         "id": "react-burger-menu-btn",
         "testId": null,
         "href": null,
+        "title": null,
+        "className": "",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -223,6 +440,9 @@
         "id": null,
         "testId": "open-menu",
         "href": null,
+        "title": null,
+        "className": "bm-icon",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -237,6 +457,9 @@
         "id": null,
         "testId": "shopping-cart-link",
         "href": "",
+        "title": null,
+        "className": "shopping_cart_link",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -251,6 +474,9 @@
         "id": null,
         "testId": "secondary-header",
         "href": null,
+        "title": null,
+        "className": "header_secondary_container",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -265,6 +491,9 @@
         "id": null,
         "testId": "title",
         "href": null,
+        "title": null,
+        "className": "title",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -279,6 +508,9 @@
         "id": null,
         "testId": "active-option",
         "href": null,
+        "title": null,
+        "className": "active_option",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -293,6 +525,9 @@
         "id": null,
         "testId": "product-sort-container",
         "href": null,
+        "title": null,
+        "className": "product_sort_container",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -307,6 +542,9 @@
         "id": "inventory_container",
         "testId": null,
         "href": null,
+        "title": null,
+        "className": "",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -321,6 +559,9 @@
         "id": "inventory_container",
         "testId": "inventory-container",
         "href": null,
+        "title": null,
+        "className": "inventory_container",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -335,6 +576,9 @@
         "id": null,
         "testId": "inventory-list",
         "href": null,
+        "title": null,
+        "className": "inventory_list",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -349,6 +593,9 @@
         "id": null,
         "testId": "inventory-item",
         "href": null,
+        "title": null,
+        "className": "inventory_item",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -363,6 +610,9 @@
         "id": "item_4_img_link",
         "testId": "item-4-img-link",
         "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "className": "",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -377,6 +627,9 @@
         "id": null,
         "testId": "inventory-item-sauce-labs-backpack-img",
         "href": null,
+        "title": null,
+        "className": "inventory_item_img",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -391,6 +644,9 @@
         "id": null,
         "testId": "inventory-item-description",
         "href": null,
+        "title": null,
+        "className": "inventory_item_description",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -405,6 +661,9 @@
         "id": "item_4_title_link",
         "testId": "item-4-title-link",
         "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "className": "",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -419,6 +678,9 @@
         "id": null,
         "testId": "inventory-item-name",
         "href": null,
+        "title": null,
+        "className": "inventory_item_name ",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -433,6 +695,9 @@
         "id": null,
         "testId": "inventory-item-desc",
         "href": null,
+        "title": null,
+        "className": "inventory_item_desc",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -447,6 +712,9 @@
         "id": null,
         "testId": "inventory-item-price",
         "href": null,
+        "title": null,
+        "className": "inventory_item_price",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -461,6 +729,9 @@
         "id": "add-to-cart-sauce-labs-backpack",
         "testId": "add-to-cart-sauce-labs-backpack",
         "href": null,
+        "title": null,
+        "className": "btn btn_primary btn_small btn_inventory ",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -475,6 +746,9 @@
         "id": null,
         "testId": "inventory-item",
         "href": null,
+        "title": null,
+        "className": "inventory_item",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -489,6 +763,9 @@
         "id": "item_0_img_link",
         "testId": "item-0-img-link",
         "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "className": "",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -503,6 +780,9 @@
         "id": null,
         "testId": "inventory-item-sauce-labs-bike-light-img",
         "href": null,
+        "title": null,
+        "className": "inventory_item_img",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -517,6 +797,9 @@
         "id": null,
         "testId": "inventory-item-description",
         "href": null,
+        "title": null,
+        "className": "inventory_item_description",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -531,6 +814,9 @@
         "id": "item_0_title_link",
         "testId": "item-0-title-link",
         "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "className": "",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -545,6 +831,9 @@
         "id": null,
         "testId": "inventory-item-name",
         "href": null,
+        "title": null,
+        "className": "inventory_item_name ",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -559,6 +848,9 @@
         "id": null,
         "testId": "inventory-item-desc",
         "href": null,
+        "title": null,
+        "className": "inventory_item_desc",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -573,6 +865,9 @@
         "id": null,
         "testId": "inventory-item-price",
         "href": null,
+        "title": null,
+        "className": "inventory_item_price",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -587,6 +882,9 @@
         "id": "add-to-cart-sauce-labs-bike-light",
         "testId": "add-to-cart-sauce-labs-bike-light",
         "href": null,
+        "title": null,
+        "className": "btn btn_primary btn_small btn_inventory ",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -601,6 +899,9 @@
         "id": null,
         "testId": "inventory-item",
         "href": null,
+        "title": null,
+        "className": "inventory_item",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -615,6 +916,9 @@
         "id": "item_1_img_link",
         "testId": "item-1-img-link",
         "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "className": "",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -629,6 +933,9 @@
         "id": null,
         "testId": "inventory-item-sauce-labs-bolt-t-shirt-img",
         "href": null,
+        "title": null,
+        "className": "inventory_item_img",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -643,6 +950,9 @@
         "id": null,
         "testId": "inventory-item-description",
         "href": null,
+        "title": null,
+        "className": "inventory_item_description",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -657,6 +967,9 @@
         "id": "item_1_title_link",
         "testId": "item-1-title-link",
         "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "className": "",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -671,6 +984,9 @@
         "id": null,
         "testId": "inventory-item-name",
         "href": null,
+        "title": null,
+        "className": "inventory_item_name ",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -685,6 +1001,9 @@
         "id": null,
         "testId": "inventory-item-desc",
         "href": null,
+        "title": null,
+        "className": "inventory_item_desc",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -699,6 +1018,9 @@
         "id": null,
         "testId": "inventory-item-price",
         "href": null,
+        "title": null,
+        "className": "inventory_item_price",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -713,6 +1035,9 @@
         "id": "add-to-cart-sauce-labs-bolt-t-shirt",
         "testId": "add-to-cart-sauce-labs-bolt-t-shirt",
         "href": null,
+        "title": null,
+        "className": "btn btn_primary btn_small btn_inventory ",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -727,6 +1052,9 @@
         "id": null,
         "testId": "inventory-item",
         "href": null,
+        "title": null,
+        "className": "inventory_item",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -741,6 +1069,9 @@
         "id": "item_5_img_link",
         "testId": "item-5-img-link",
         "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "className": "",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -755,6 +1086,9 @@
         "id": null,
         "testId": "inventory-item-sauce-labs-fleece-jacket-img",
         "href": null,
+        "title": null,
+        "className": "inventory_item_img",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -769,6 +1103,9 @@
         "id": null,
         "testId": "inventory-item-description",
         "href": null,
+        "title": null,
+        "className": "inventory_item_description",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -783,6 +1120,9 @@
         "id": "item_5_title_link",
         "testId": "item-5-title-link",
         "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "className": "",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -797,6 +1137,9 @@
         "id": null,
         "testId": "inventory-item-name",
         "href": null,
+        "title": null,
+        "className": "inventory_item_name ",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -811,6 +1154,9 @@
         "id": null,
         "testId": "inventory-item-desc",
         "href": null,
+        "title": null,
+        "className": "inventory_item_desc",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -825,6 +1171,9 @@
         "id": null,
         "testId": "inventory-item-price",
         "href": null,
+        "title": null,
+        "className": "inventory_item_price",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -839,6 +1188,9 @@
         "id": "add-to-cart-sauce-labs-fleece-jacket",
         "testId": "add-to-cart-sauce-labs-fleece-jacket",
         "href": null,
+        "title": null,
+        "className": "btn btn_primary btn_small btn_inventory ",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -853,6 +1205,9 @@
         "id": null,
         "testId": "inventory-item",
         "href": null,
+        "title": null,
+        "className": "inventory_item",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -867,6 +1222,9 @@
         "id": "item_2_img_link",
         "testId": "item-2-img-link",
         "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "className": "",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -881,6 +1239,9 @@
         "id": null,
         "testId": "inventory-item-sauce-labs-onesie-img",
         "href": null,
+        "title": null,
+        "className": "inventory_item_img",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -895,6 +1256,9 @@
         "id": null,
         "testId": "inventory-item-description",
         "href": null,
+        "title": null,
+        "className": "inventory_item_description",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -909,6 +1273,9 @@
         "id": "item_2_title_link",
         "testId": "item-2-title-link",
         "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "className": "",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -923,6 +1290,9 @@
         "id": null,
         "testId": "inventory-item-name",
         "href": null,
+        "title": null,
+        "className": "inventory_item_name ",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -937,6 +1307,9 @@
         "id": null,
         "testId": "inventory-item-desc",
         "href": null,
+        "title": null,
+        "className": "inventory_item_desc",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -951,6 +1324,9 @@
         "id": null,
         "testId": "inventory-item-price",
         "href": null,
+        "title": null,
+        "className": "inventory_item_price",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -965,6 +1341,9 @@
         "id": "add-to-cart-sauce-labs-onesie",
         "testId": "add-to-cart-sauce-labs-onesie",
         "href": null,
+        "title": null,
+        "className": "btn btn_primary btn_small btn_inventory ",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -979,6 +1358,9 @@
         "id": null,
         "testId": "inventory-item",
         "href": null,
+        "title": null,
+        "className": "inventory_item",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -993,6 +1375,9 @@
         "id": "item_3_img_link",
         "testId": "item-3-img-link",
         "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "className": "",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -1007,6 +1392,9 @@
         "id": null,
         "testId": "inventory-item-test.allthethings()-t-shirt-(red)-img",
         "href": null,
+        "title": null,
+        "className": "inventory_item_img",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -1021,6 +1409,9 @@
         "id": null,
         "testId": "inventory-item-description",
         "href": null,
+        "title": null,
+        "className": "inventory_item_description",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -1035,6 +1426,9 @@
         "id": "item_3_title_link",
         "testId": "item-3-title-link",
         "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "className": "",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -1049,6 +1443,9 @@
         "id": null,
         "testId": "inventory-item-name",
         "href": null,
+        "title": null,
+        "className": "inventory_item_name ",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -1063,6 +1460,9 @@
         "id": null,
         "testId": "inventory-item-desc",
         "href": null,
+        "title": null,
+        "className": "inventory_item_desc",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -1077,6 +1477,9 @@
         "id": null,
         "testId": "inventory-item-price",
         "href": null,
+        "title": null,
+        "className": "inventory_item_price",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -1091,6 +1494,9 @@
         "id": "add-to-cart-test.allthethings()-t-shirt-(red)",
         "testId": "add-to-cart-test.allthethings()-t-shirt-(red)",
         "href": null,
+        "title": null,
+        "className": "btn btn_primary btn_small btn_inventory ",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -1105,6 +1511,9 @@
         "id": null,
         "testId": "footer",
         "href": null,
+        "title": null,
+        "className": "footer",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -1119,6 +1528,9 @@
         "id": null,
         "testId": "social-x",
         "href": "https://x.com/saucelabs",
+        "title": null,
+        "className": "",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -1133,6 +1545,9 @@
         "id": null,
         "testId": "social-facebook",
         "href": "https://www.facebook.com/saucelabs",
+        "title": null,
+        "className": "",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -1147,6 +1562,9 @@
         "id": null,
         "testId": "social-linkedin",
         "href": "https://www.linkedin.com/company/sauce-labs/",
+        "title": null,
+        "className": "",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
       },
@@ -1161,8 +1579,103 @@
         "id": null,
         "testId": "footer-copy",
         "href": null,
+        "title": null,
+        "className": "footer_copy",
+        "autocomplete": null,
         "visible": true,
         "enabled": true
+      }
+    ],
+    "discoveredLinks": [
+      {
+        "text": "",
+        "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "visible": true
+      },
+      {
+        "text": "Sauce Labs Backpack",
+        "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "visible": true
+      },
+      {
+        "text": "",
+        "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "visible": true
+      },
+      {
+        "text": "Sauce Labs Bike Light",
+        "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "visible": true
+      },
+      {
+        "text": "",
+        "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "visible": true
+      },
+      {
+        "text": "Sauce Labs Bolt T-Shirt",
+        "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "visible": true
+      },
+      {
+        "text": "",
+        "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "visible": true
+      },
+      {
+        "text": "Sauce Labs Fleece Jacket",
+        "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "visible": true
+      },
+      {
+        "text": "",
+        "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "visible": true
+      },
+      {
+        "text": "Sauce Labs Onesie",
+        "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "visible": true
+      },
+      {
+        "text": "",
+        "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "visible": true
+      },
+      {
+        "text": "Test.allTheThings() T-Shirt (Red)",
+        "href": "https://www.saucedemo.com/inventory.html#",
+        "title": null,
+        "visible": true
+      },
+      {
+        "text": "X",
+        "href": "https://x.com/saucelabs",
+        "title": null,
+        "visible": true
+      },
+      {
+        "text": "Facebook",
+        "href": "https://www.facebook.com/saucelabs",
+        "title": null,
+        "visible": true
+      },
+      {
+        "text": "LinkedIn",
+        "href": "https://www.linkedin.com/company/sauce-labs/",
+        "title": null,
+        "visible": true
       }
     ],
     "elementCounts": {
@@ -1174,14 +1687,1742 @@
     },
     "searchRelatedElements": []
   },
+  "pages": [
+    {
+      "url": "https://www.saucedemo.com/",
+      "title": "Swag Labs",
+      "bodyText": "Swag Labs Accepted usernames are: standard_user locked_out_user problem_user performance_glitch_user error_user visual_user Password for all users: secret_sauce",
+      "elements": [
+        {
+          "tag": "div",
+          "text": "Accepted usernames are:standard_userlocked_out_userproblem_userperformance_glitch_usererror_uservisual_userPassword for all users:secret_sauce",
+          "role": "main",
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "login-container",
+          "href": null,
+          "title": null,
+          "className": "login_wrapper",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "form",
+          "text": "",
+          "role": null,
+          "accessibleLabel": "Login",
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": null,
+          "href": null,
+          "title": null,
+          "className": "",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "input",
+          "text": "",
+          "role": null,
+          "accessibleLabel": "Username",
+          "placeholder": "Username",
+          "name": "user-name",
+          "type": "text",
+          "id": "user-name",
+          "testId": "username",
+          "href": null,
+          "title": null,
+          "className": "input_error form_input",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "input",
+          "text": "",
+          "role": null,
+          "accessibleLabel": "Password",
+          "placeholder": "Password",
+          "name": "password",
+          "type": "password",
+          "id": "password",
+          "testId": "password",
+          "href": null,
+          "title": null,
+          "className": "input_error form_input",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "input",
+          "text": "",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": "login-button",
+          "type": "submit",
+          "id": "login-button",
+          "testId": "login-button",
+          "href": null,
+          "title": null,
+          "className": "submit-button btn_action",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Accepted usernames are:standard_userlocked_out_userproblem_userperformance_glitch_usererror_uservisual_userPassword for all users:secret_sauce",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "login-credentials-container",
+          "href": null,
+          "title": null,
+          "className": "login_credentials_wrap",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Accepted usernames are:standard_userlocked_out_userproblem_userperformance_glitch_usererror_uservisual_user",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": "login_credentials",
+          "testId": "login-credentials",
+          "href": null,
+          "title": null,
+          "className": "login_credentials",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Password for all users:secret_sauce",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "login-password",
+          "href": null,
+          "title": null,
+          "className": "login_password",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        }
+      ],
+      "discoveredLinks": [],
+      "elementCounts": {
+        "inputs": 3,
+        "buttons": 0,
+        "links": 0,
+        "selects": 0,
+        "forms": 1
+      },
+      "searchRelatedElements": []
+    },
+    {
+      "url": "https://www.saucedemo.com/inventory.html",
+      "title": "Swag Labs",
+      "bodyText": "Open Menu Swag Labs Products Name (A to Z) Name (A to Z) Name (Z to A) Price (low to high) Price (high to low) Sauce Labs Backpack carry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection. $29.99 Add to cart Sauce Labs Bike Light A red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included. $9.99 Add to cart Sauce Labs Bolt T-Shirt Get your testing superhero on with the Sauce Labs bolt T-shirt. From American Apparel, 100% ringspun combed cotton, heather gray with red bolt. $15.99 Add to cart Sauce Labs Fleece Jacket It's not every day that you come across a midweight quarter-zip fleece jacket capable of handling everything from a relaxing day outdoors to a busy day at the office. $49.99 Add to cart Sauce Labs Onesie Rib snap infant onesie for the junior automation engineer in development. Reinforced 3-snap bottom closure, two-needle hemmed sleeved and bottom won't unravel. $7.99 Add to cart Test.allTheThings() T-Shirt (Red) This classic Sauce Labs t-shirt is perfect to wear when cozying up to your keyboard to automate a few tests. Super-soft and comfy ringspun combed cotton. $15.99 Add to cart X Facebook LinkedIn © 2026 Sauce Labs. All Rights Reserved. Terms of Service | Privacy Policy",
+      "elements": [
+        {
+          "tag": "header",
+          "text": "Open MenuAll ItemsDynamic CatalogAboutLogoutReset App StateClose MenuSwag LabsProductsName (A to Z)Name (A to Z)Name (Z to A)Price (low to high)Price (high to low)",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": "header_container",
+          "testId": "header-container",
+          "href": null,
+          "title": null,
+          "className": "header_container",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Open MenuAll ItemsDynamic CatalogAboutLogoutReset App StateClose MenuSwag Labs",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "primary-header",
+          "href": null,
+          "title": null,
+          "className": "primary_header",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "button",
+          "text": "Open Menu",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": "button",
+          "id": "react-burger-menu-btn",
+          "testId": null,
+          "href": null,
+          "title": null,
+          "className": "",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "img",
+          "text": "",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "open-menu",
+          "href": null,
+          "title": null,
+          "className": "bm-icon",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "a",
+          "text": "",
+          "role": "button",
+          "accessibleLabel": "Cart, empty",
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "shopping-cart-link",
+          "href": "",
+          "title": null,
+          "className": "shopping_cart_link",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "ProductsName (A to Z)Name (A to Z)Name (Z to A)Price (low to high)Price (high to low)",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "secondary-header",
+          "href": null,
+          "title": null,
+          "className": "header_secondary_container",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "span",
+          "text": "Products",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "title",
+          "href": null,
+          "title": null,
+          "className": "title",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "span",
+          "text": "Name (A to Z)",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "active-option",
+          "href": null,
+          "title": null,
+          "className": "active_option",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "select",
+          "text": "Name (A to Z)Name (Z to A)Price (low to high)Price (high to low)",
+          "role": null,
+          "accessibleLabel": "Sort products",
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "product-sort-container",
+          "href": null,
+          "title": null,
+          "className": "product_sort_container",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cartSauce Labs Bike LightA red lig",
+          "role": "main",
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": "inventory_container",
+          "testId": null,
+          "href": null,
+          "title": null,
+          "className": "",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cartSauce Labs Bike LightA red lig",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": "inventory_container",
+          "testId": "inventory-container",
+          "href": null,
+          "title": null,
+          "className": "inventory_container",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cartSauce Labs Bike LightA red lig",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-list",
+          "href": null,
+          "title": null,
+          "className": "inventory_list",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cart",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item",
+          "href": null,
+          "title": null,
+          "className": "inventory_item",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "a",
+          "text": "",
+          "role": "button",
+          "accessibleLabel": "View details for Sauce Labs Backpack",
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": "item_4_img_link",
+          "testId": "item-4-img-link",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "className": "",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "img",
+          "text": "",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-sauce-labs-backpack-img",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_img",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cart",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-description",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_description",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "a",
+          "text": "Sauce Labs Backpack",
+          "role": "button",
+          "accessibleLabel": "View details for Sauce Labs Backpack",
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": "item_4_title_link",
+          "testId": "item-4-title-link",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "className": "",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Sauce Labs Backpack",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-name",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_name ",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "carry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-desc",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_desc",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "$29.99",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-price",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_price",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "button",
+          "text": "Add to cart",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": "add-to-cart-sauce-labs-backpack",
+          "type": null,
+          "id": "add-to-cart-sauce-labs-backpack",
+          "testId": "add-to-cart-sauce-labs-backpack",
+          "href": null,
+          "title": null,
+          "className": "btn btn_primary btn_small btn_inventory ",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Sauce Labs Bike LightA red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included.$9.99Add to cart",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item",
+          "href": null,
+          "title": null,
+          "className": "inventory_item",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "a",
+          "text": "",
+          "role": "button",
+          "accessibleLabel": "View details for Sauce Labs Bike Light",
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": "item_0_img_link",
+          "testId": "item-0-img-link",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "className": "",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "img",
+          "text": "",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-sauce-labs-bike-light-img",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_img",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Sauce Labs Bike LightA red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included.$9.99Add to cart",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-description",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_description",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "a",
+          "text": "Sauce Labs Bike Light",
+          "role": "button",
+          "accessibleLabel": "View details for Sauce Labs Bike Light",
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": "item_0_title_link",
+          "testId": "item-0-title-link",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "className": "",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Sauce Labs Bike Light",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-name",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_name ",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "A red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included.",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-desc",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_desc",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "$9.99",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-price",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_price",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "button",
+          "text": "Add to cart",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": "add-to-cart-sauce-labs-bike-light",
+          "type": null,
+          "id": "add-to-cart-sauce-labs-bike-light",
+          "testId": "add-to-cart-sauce-labs-bike-light",
+          "href": null,
+          "title": null,
+          "className": "btn btn_primary btn_small btn_inventory ",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Sauce Labs Bolt T-ShirtGet your testing superhero on with the Sauce Labs bolt T-shirt. From American Apparel, 100% ringspun combed cotton, heather gray with red bolt.$15.99Add to cart",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item",
+          "href": null,
+          "title": null,
+          "className": "inventory_item",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "a",
+          "text": "",
+          "role": "button",
+          "accessibleLabel": "View details for Sauce Labs Bolt T-Shirt",
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": "item_1_img_link",
+          "testId": "item-1-img-link",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "className": "",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "img",
+          "text": "",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-sauce-labs-bolt-t-shirt-img",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_img",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Sauce Labs Bolt T-ShirtGet your testing superhero on with the Sauce Labs bolt T-shirt. From American Apparel, 100% ringspun combed cotton, heather gray with red bolt.$15.99Add to cart",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-description",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_description",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "a",
+          "text": "Sauce Labs Bolt T-Shirt",
+          "role": "button",
+          "accessibleLabel": "View details for Sauce Labs Bolt T-Shirt",
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": "item_1_title_link",
+          "testId": "item-1-title-link",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "className": "",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Sauce Labs Bolt T-Shirt",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-name",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_name ",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Get your testing superhero on with the Sauce Labs bolt T-shirt. From American Apparel, 100% ringspun combed cotton, heather gray with red bolt.",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-desc",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_desc",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "$15.99",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-price",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_price",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "button",
+          "text": "Add to cart",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": "add-to-cart-sauce-labs-bolt-t-shirt",
+          "type": null,
+          "id": "add-to-cart-sauce-labs-bolt-t-shirt",
+          "testId": "add-to-cart-sauce-labs-bolt-t-shirt",
+          "href": null,
+          "title": null,
+          "className": "btn btn_primary btn_small btn_inventory ",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Sauce Labs Fleece JacketIt's not every day that you come across a midweight quarter-zip fleece jacket capable of handling everything from a relaxing day outdoors to a busy day at the office.$49.99Add ",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item",
+          "href": null,
+          "title": null,
+          "className": "inventory_item",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "a",
+          "text": "",
+          "role": "button",
+          "accessibleLabel": "View details for Sauce Labs Fleece Jacket",
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": "item_5_img_link",
+          "testId": "item-5-img-link",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "className": "",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "img",
+          "text": "",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-sauce-labs-fleece-jacket-img",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_img",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Sauce Labs Fleece JacketIt's not every day that you come across a midweight quarter-zip fleece jacket capable of handling everything from a relaxing day outdoors to a busy day at the office.$49.99Add ",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-description",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_description",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "a",
+          "text": "Sauce Labs Fleece Jacket",
+          "role": "button",
+          "accessibleLabel": "View details for Sauce Labs Fleece Jacket",
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": "item_5_title_link",
+          "testId": "item-5-title-link",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "className": "",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Sauce Labs Fleece Jacket",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-name",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_name ",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "It's not every day that you come across a midweight quarter-zip fleece jacket capable of handling everything from a relaxing day outdoors to a busy day at the office.",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-desc",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_desc",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "$49.99",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-price",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_price",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "button",
+          "text": "Add to cart",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": "add-to-cart-sauce-labs-fleece-jacket",
+          "type": null,
+          "id": "add-to-cart-sauce-labs-fleece-jacket",
+          "testId": "add-to-cart-sauce-labs-fleece-jacket",
+          "href": null,
+          "title": null,
+          "className": "btn btn_primary btn_small btn_inventory ",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Sauce Labs OnesieRib snap infant onesie for the junior automation engineer in development. Reinforced 3-snap bottom closure, two-needle hemmed sleeved and bottom won't unravel.$7.99Add to cart",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item",
+          "href": null,
+          "title": null,
+          "className": "inventory_item",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "a",
+          "text": "",
+          "role": "button",
+          "accessibleLabel": "View details for Sauce Labs Onesie",
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": "item_2_img_link",
+          "testId": "item-2-img-link",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "className": "",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "img",
+          "text": "",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-sauce-labs-onesie-img",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_img",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Sauce Labs OnesieRib snap infant onesie for the junior automation engineer in development. Reinforced 3-snap bottom closure, two-needle hemmed sleeved and bottom won't unravel.$7.99Add to cart",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-description",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_description",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "a",
+          "text": "Sauce Labs Onesie",
+          "role": "button",
+          "accessibleLabel": "View details for Sauce Labs Onesie",
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": "item_2_title_link",
+          "testId": "item-2-title-link",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "className": "",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Sauce Labs Onesie",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-name",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_name ",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Rib snap infant onesie for the junior automation engineer in development. Reinforced 3-snap bottom closure, two-needle hemmed sleeved and bottom won't unravel.",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-desc",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_desc",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "$7.99",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-price",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_price",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "button",
+          "text": "Add to cart",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": "add-to-cart-sauce-labs-onesie",
+          "type": null,
+          "id": "add-to-cart-sauce-labs-onesie",
+          "testId": "add-to-cart-sauce-labs-onesie",
+          "href": null,
+          "title": null,
+          "className": "btn btn_primary btn_small btn_inventory ",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Test.allTheThings() T-Shirt (Red)This classic Sauce Labs t-shirt is perfect to wear when cozying up to your keyboard to automate a few tests. Super-soft and comfy ringspun combed cotton.$15.99Add to c",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item",
+          "href": null,
+          "title": null,
+          "className": "inventory_item",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "a",
+          "text": "",
+          "role": "button",
+          "accessibleLabel": "View details for Test.allTheThings() T-Shirt (Red)",
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": "item_3_img_link",
+          "testId": "item-3-img-link",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "className": "",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "img",
+          "text": "",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-test.allthethings()-t-shirt-(red)-img",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_img",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Test.allTheThings() T-Shirt (Red)This classic Sauce Labs t-shirt is perfect to wear when cozying up to your keyboard to automate a few tests. Super-soft and comfy ringspun combed cotton.$15.99Add to c",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-description",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_description",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "a",
+          "text": "Test.allTheThings() T-Shirt (Red)",
+          "role": "button",
+          "accessibleLabel": "View details for Test.allTheThings() T-Shirt (Red)",
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": "item_3_title_link",
+          "testId": "item-3-title-link",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "className": "",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "Test.allTheThings() T-Shirt (Red)",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-name",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_name ",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "This classic Sauce Labs t-shirt is perfect to wear when cozying up to your keyboard to automate a few tests. Super-soft and comfy ringspun combed cotton.",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-desc",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_desc",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "$15.99",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "inventory-item-price",
+          "href": null,
+          "title": null,
+          "className": "inventory_item_price",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "button",
+          "text": "Add to cart",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": "add-to-cart-test.allthethings()-t-shirt-(red)",
+          "type": null,
+          "id": "add-to-cart-test.allthethings()-t-shirt-(red)",
+          "testId": "add-to-cart-test.allthethings()-t-shirt-(red)",
+          "href": null,
+          "title": null,
+          "className": "btn btn_primary btn_small btn_inventory ",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "footer",
+          "text": "XFacebookLinkedIn© 2026 Sauce Labs. All Rights Reserved. Terms of Service | Privacy Policy",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "footer",
+          "href": null,
+          "title": null,
+          "className": "footer",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "a",
+          "text": "X",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "social-x",
+          "href": "https://x.com/saucelabs",
+          "title": null,
+          "className": "",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "a",
+          "text": "Facebook",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "social-facebook",
+          "href": "https://www.facebook.com/saucelabs",
+          "title": null,
+          "className": "",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "a",
+          "text": "LinkedIn",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "social-linkedin",
+          "href": "https://www.linkedin.com/company/sauce-labs/",
+          "title": null,
+          "className": "",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "tag": "div",
+          "text": "© 2026 Sauce Labs. All Rights Reserved. Terms of Service | Privacy Policy",
+          "role": null,
+          "accessibleLabel": null,
+          "placeholder": null,
+          "name": null,
+          "type": null,
+          "id": null,
+          "testId": "footer-copy",
+          "href": null,
+          "title": null,
+          "className": "footer_copy",
+          "autocomplete": null,
+          "visible": true,
+          "enabled": true
+        }
+      ],
+      "discoveredLinks": [
+        {
+          "text": "",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "visible": true
+        },
+        {
+          "text": "Sauce Labs Backpack",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "visible": true
+        },
+        {
+          "text": "",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "visible": true
+        },
+        {
+          "text": "Sauce Labs Bike Light",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "visible": true
+        },
+        {
+          "text": "",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "visible": true
+        },
+        {
+          "text": "Sauce Labs Bolt T-Shirt",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "visible": true
+        },
+        {
+          "text": "",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "visible": true
+        },
+        {
+          "text": "Sauce Labs Fleece Jacket",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "visible": true
+        },
+        {
+          "text": "",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "visible": true
+        },
+        {
+          "text": "Sauce Labs Onesie",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "visible": true
+        },
+        {
+          "text": "",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "visible": true
+        },
+        {
+          "text": "Test.allTheThings() T-Shirt (Red)",
+          "href": "https://www.saucedemo.com/inventory.html#",
+          "title": null,
+          "visible": true
+        },
+        {
+          "text": "X",
+          "href": "https://x.com/saucelabs",
+          "title": null,
+          "visible": true
+        },
+        {
+          "text": "Facebook",
+          "href": "https://www.facebook.com/saucelabs",
+          "title": null,
+          "visible": true
+        },
+        {
+          "text": "LinkedIn",
+          "href": "https://www.linkedin.com/company/sauce-labs/",
+          "title": null,
+          "visible": true
+        }
+      ],
+      "elementCounts": {
+        "inputs": 0,
+        "buttons": 25,
+        "links": 20,
+        "selects": 1,
+        "forms": 0
+      },
+      "searchRelatedElements": []
+    }
+  ],
+  "routeDiscovery": {
+    "followedLinks": [],
+    "skippedLinks": [
+      {
+        "url": "https://x.com/saucelabs",
+        "reason": "External-domain link"
+      },
+      {
+        "url": "https://www.facebook.com/saucelabs",
+        "reason": "External-domain link"
+      },
+      {
+        "url": "https://www.linkedin.com/company/sauce-labs/",
+        "reason": "External-domain link"
+      }
+    ],
+    "errors": []
+  },
+  "requiredCapabilities": [
+    "productListing",
+    "search",
+    "pagination",
+    "forms",
+    "navigation"
+  ],
   "capabilityAssessment": {
+    "capabilities": [
+      {
+        "capability": "authentication",
+        "requiredByRequirement": false,
+        "potentialControlsFound": true,
+        "status": "POTENTIAL_CONTROLS_FOUND",
+        "confidence": "MEDIUM",
+        "evidence": [
+          "https://www.saucedemo.com/: div text=\"Accepted usernames are:standard_userlocked_out_userproblem_userperformance_glitch_usererror_uservisual_userPassword for all users:secret_sauce\" testId=\"login-container\" class=\"login_wrapper\"",
+          "https://www.saucedemo.com/: form",
+          "https://www.saucedemo.com/: input placeholder=\"Username\" name=\"user-name\" testId=\"username\" class=\"input_error form_input\"",
+          "https://www.saucedemo.com/: input placeholder=\"Password\" name=\"password\" testId=\"password\" class=\"input_error form_input\"",
+          "https://www.saucedemo.com/: input name=\"login-button\" testId=\"login-button\" class=\"submit-button btn_action\"",
+          "https://www.saucedemo.com/: div text=\"Accepted usernames are:standard_userlocked_out_userproblem_userperformance_glitch_usererror_uservisual_userPassword for all users:secret_sauce\" testId=\"login-credentials-container\" class=\"login_credentials_wrap\"",
+          "https://www.saucedemo.com/: div text=\"Accepted usernames are:standard_userlocked_out_userproblem_userperformance_glitch_usererror_uservisual_user\" testId=\"login-credentials\" class=\"login_credentials\"",
+          "https://www.saucedemo.com/: div text=\"Password for all users:secret_sauce\" testId=\"login-password\" class=\"login_password\"",
+          "https://www.saucedemo.com/: Password input detected."
+        ],
+        "behaviorVerified": false,
+        "note": "Potential controls or page evidence were found. The capability's actual behavior has not been tested."
+      },
+      {
+        "capability": "productListing",
+        "requiredByRequirement": true,
+        "potentialControlsFound": true,
+        "status": "POTENTIAL_CONTROLS_FOUND",
+        "confidence": "MEDIUM",
+        "evidence": [
+          "https://www.saucedemo.com/inventory.html: span text=\"Products\" testId=\"title\" class=\"title\"",
+          "https://www.saucedemo.com/inventory.html: select text=\"Name (A to Z)Name (Z to A)Price (low to high)Price (high to low)\" testId=\"product-sort-container\" class=\"product_sort_container\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cartSauce Labs Bike LightA red lig\" testId=\"inventory-container\" class=\"inventory_container\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cartSauce Labs Bike LightA red lig\" testId=\"inventory-list\" class=\"inventory_list\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cart\" testId=\"inventory-item\" class=\"inventory_item\"",
+          "https://www.saucedemo.com/inventory.html: a testId=\"item-4-img-link\"",
+          "https://www.saucedemo.com/inventory.html: img testId=\"inventory-item-sauce-labs-backpack-img\" class=\"inventory_item_img\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cart\" testId=\"inventory-item-description\" class=\"inventory_item_description\"",
+          "https://www.saucedemo.com/inventory.html: a text=\"Sauce Labs Backpack\" testId=\"item-4-title-link\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpack\" testId=\"inventory-item-name\" class=\"inventory_item_name \"",
+          "https://www.saucedemo.com/inventory.html: div text=\"carry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.\" testId=\"inventory-item-desc\" class=\"inventory_item_desc\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"$29.99\" testId=\"inventory-item-price\" class=\"inventory_item_price\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Bike LightA red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included.$9.99Add to cart\" testId=\"inventory-item\" class=\"inventory_item\"",
+          "https://www.saucedemo.com/inventory.html: a testId=\"item-0-img-link\"",
+          "https://www.saucedemo.com/inventory.html: img testId=\"inventory-item-sauce-labs-bike-light-img\" class=\"inventory_item_img\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Bike LightA red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included.$9.99Add to cart\" testId=\"inventory-item-description\" class=\"inventory_item_description\"",
+          "https://www.saucedemo.com/inventory.html: a text=\"Sauce Labs Bike Light\" testId=\"item-0-title-link\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Bike Light\" testId=\"inventory-item-name\" class=\"inventory_item_name \"",
+          "https://www.saucedemo.com/inventory.html: div text=\"A red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included.\" testId=\"inventory-item-desc\" class=\"inventory_item_desc\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"$9.99\" testId=\"inventory-item-price\" class=\"inventory_item_price\""
+        ],
+        "behaviorVerified": false,
+        "note": "Potential controls or page evidence were found. The capability's actual behavior has not been tested."
+      },
+      {
+        "capability": "search",
+        "requiredByRequirement": true,
+        "potentialControlsFound": false,
+        "status": "NOT_DETECTED_ON_INSPECTED_PAGES",
+        "confidence": "NOT_ASSESSED",
+        "evidence": [],
+        "behaviorVerified": false,
+        "note": "No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability."
+      },
+      {
+        "capability": "filtering",
+        "requiredByRequirement": false,
+        "potentialControlsFound": false,
+        "status": "NOT_DETECTED_ON_INSPECTED_PAGES",
+        "confidence": "NOT_ASSESSED",
+        "evidence": [],
+        "behaviorVerified": false,
+        "note": "No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability."
+      },
+      {
+        "capability": "sorting",
+        "requiredByRequirement": false,
+        "potentialControlsFound": true,
+        "status": "POTENTIAL_CONTROLS_FOUND",
+        "confidence": "MEDIUM",
+        "evidence": [
+          "https://www.saucedemo.com/inventory.html: header text=\"Open MenuAll ItemsDynamic CatalogAboutLogoutReset App StateClose MenuSwag LabsProductsName (A to Z)Name (A to Z)Name (Z to A)Price (low to high)Price (high to low)\" testId=\"header-container\" class=\"header_container\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"ProductsName (A to Z)Name (A to Z)Name (Z to A)Price (low to high)Price (high to low)\" testId=\"secondary-header\" class=\"header_secondary_container\"",
+          "https://www.saucedemo.com/inventory.html: select text=\"Name (A to Z)Name (Z to A)Price (low to high)Price (high to low)\" testId=\"product-sort-container\" class=\"product_sort_container\""
+        ],
+        "behaviorVerified": false,
+        "note": "Potential controls or page evidence were found. The capability's actual behavior has not been tested."
+      },
+      {
+        "capability": "pagination",
+        "requiredByRequirement": true,
+        "potentialControlsFound": false,
+        "status": "NOT_DETECTED_ON_INSPECTED_PAGES",
+        "confidence": "NOT_ASSESSED",
+        "evidence": [],
+        "behaviorVerified": false,
+        "note": "No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability."
+      },
+      {
+        "capability": "cart",
+        "requiredByRequirement": false,
+        "potentialControlsFound": true,
+        "status": "POTENTIAL_CONTROLS_FOUND",
+        "confidence": "MEDIUM",
+        "evidence": [
+          "https://www.saucedemo.com/inventory.html: a testId=\"shopping-cart-link\" class=\"shopping_cart_link\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cart\" testId=\"inventory-item\" class=\"inventory_item\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cart\" testId=\"inventory-item-description\" class=\"inventory_item_description\"",
+          "https://www.saucedemo.com/inventory.html: button text=\"Add to cart\" name=\"add-to-cart-sauce-labs-backpack\" testId=\"add-to-cart-sauce-labs-backpack\" class=\"btn btn_primary btn_small btn_inventory \"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Bike LightA red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included.$9.99Add to cart\" testId=\"inventory-item\" class=\"inventory_item\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Bike LightA red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included.$9.99Add to cart\" testId=\"inventory-item-description\" class=\"inventory_item_description\"",
+          "https://www.saucedemo.com/inventory.html: button text=\"Add to cart\" name=\"add-to-cart-sauce-labs-bike-light\" testId=\"add-to-cart-sauce-labs-bike-light\" class=\"btn btn_primary btn_small btn_inventory \"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Bolt T-ShirtGet your testing superhero on with the Sauce Labs bolt T-shirt. From American Apparel, 100% ringspun combed cotton, heather gray with red bolt.$15.99Add to cart\" testId=\"inventory-item\" class=\"inventory_item\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Bolt T-ShirtGet your testing superhero on with the Sauce Labs bolt T-shirt. From American Apparel, 100% ringspun combed cotton, heather gray with red bolt.$15.99Add to cart\" testId=\"inventory-item-description\" class=\"inventory_item_description\"",
+          "https://www.saucedemo.com/inventory.html: button text=\"Add to cart\" name=\"add-to-cart-sauce-labs-bolt-t-shirt\" testId=\"add-to-cart-sauce-labs-bolt-t-shirt\" class=\"btn btn_primary btn_small btn_inventory \"",
+          "https://www.saucedemo.com/inventory.html: button text=\"Add to cart\" name=\"add-to-cart-sauce-labs-fleece-jacket\" testId=\"add-to-cart-sauce-labs-fleece-jacket\" class=\"btn btn_primary btn_small btn_inventory \"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs OnesieRib snap infant onesie for the junior automation engineer in development. Reinforced 3-snap bottom closure, two-needle hemmed sleeved and bottom won't unravel.$7.99Add to cart\" testId=\"inventory-item\" class=\"inventory_item\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs OnesieRib snap infant onesie for the junior automation engineer in development. Reinforced 3-snap bottom closure, two-needle hemmed sleeved and bottom won't unravel.$7.99Add to cart\" testId=\"inventory-item-description\" class=\"inventory_item_description\"",
+          "https://www.saucedemo.com/inventory.html: button text=\"Add to cart\" name=\"add-to-cart-sauce-labs-onesie\" testId=\"add-to-cart-sauce-labs-onesie\" class=\"btn btn_primary btn_small btn_inventory \"",
+          "https://www.saucedemo.com/inventory.html: button text=\"Add to cart\" name=\"add-to-cart-test.allthethings()-t-shirt-(red)\" testId=\"add-to-cart-test.allthethings()-t-shirt-(red)\" class=\"btn btn_primary btn_small btn_inventory \""
+        ],
+        "behaviorVerified": false,
+        "note": "Potential controls or page evidence were found. The capability's actual behavior has not been tested."
+      },
+      {
+        "capability": "checkout",
+        "requiredByRequirement": false,
+        "potentialControlsFound": false,
+        "status": "NOT_DETECTED_ON_INSPECTED_PAGES",
+        "confidence": "NOT_ASSESSED",
+        "evidence": [],
+        "behaviorVerified": false,
+        "note": "No matching evidence was found on the inspected pages. Other routes or hidden application states may still provide this capability."
+      },
+      {
+        "capability": "forms",
+        "requiredByRequirement": true,
+        "potentialControlsFound": true,
+        "status": "POTENTIAL_CONTROLS_FOUND",
+        "confidence": "MEDIUM",
+        "evidence": [
+          "https://www.saucedemo.com/: form",
+          "https://www.saucedemo.com/: input name=\"login-button\" testId=\"login-button\" class=\"submit-button btn_action\"",
+          "https://www.saucedemo.com/: 1 form element(s) detected."
+        ],
+        "behaviorVerified": false,
+        "note": "Potential controls or page evidence were found. The capability's actual behavior has not been tested."
+      },
+      {
+        "capability": "navigation",
+        "requiredByRequirement": true,
+        "potentialControlsFound": true,
+        "status": "POTENTIAL_CONTROLS_FOUND",
+        "confidence": "MEDIUM",
+        "evidence": [
+          "https://www.saucedemo.com/inventory.html: button text=\"Open Menu\"",
+          "https://www.saucedemo.com/inventory.html: img testId=\"open-menu\" class=\"bm-icon\"",
+          "https://www.saucedemo.com/inventory.html: 20 link(s) detected."
+        ],
+        "behaviorVerified": false,
+        "note": "Potential controls or page evidence were found. The capability's actual behavior has not been tested."
+      }
+    ],
+    "requiredCapabilities": [
+      "productListing",
+      "search",
+      "pagination",
+      "forms",
+      "navigation"
+    ],
+    "requirementAssessment": [
+      {
+        "capability": "productListing",
+        "detected": true,
+        "status": "POTENTIAL_CONTROLS_FOUND",
+        "evidence": [
+          "https://www.saucedemo.com/inventory.html: span text=\"Products\" testId=\"title\" class=\"title\"",
+          "https://www.saucedemo.com/inventory.html: select text=\"Name (A to Z)Name (Z to A)Price (low to high)Price (high to low)\" testId=\"product-sort-container\" class=\"product_sort_container\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cartSauce Labs Bike LightA red lig\" testId=\"inventory-container\" class=\"inventory_container\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cartSauce Labs Bike LightA red lig\" testId=\"inventory-list\" class=\"inventory_list\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cart\" testId=\"inventory-item\" class=\"inventory_item\"",
+          "https://www.saucedemo.com/inventory.html: a testId=\"item-4-img-link\"",
+          "https://www.saucedemo.com/inventory.html: img testId=\"inventory-item-sauce-labs-backpack-img\" class=\"inventory_item_img\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpackcarry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.$29.99Add to cart\" testId=\"inventory-item-description\" class=\"inventory_item_description\"",
+          "https://www.saucedemo.com/inventory.html: a text=\"Sauce Labs Backpack\" testId=\"item-4-title-link\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Backpack\" testId=\"inventory-item-name\" class=\"inventory_item_name \"",
+          "https://www.saucedemo.com/inventory.html: div text=\"carry.allTheThings() with the sleek, streamlined Sly Pack that melds uncompromising style with unequaled laptop and tablet protection.\" testId=\"inventory-item-desc\" class=\"inventory_item_desc\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"$29.99\" testId=\"inventory-item-price\" class=\"inventory_item_price\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Bike LightA red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included.$9.99Add to cart\" testId=\"inventory-item\" class=\"inventory_item\"",
+          "https://www.saucedemo.com/inventory.html: a testId=\"item-0-img-link\"",
+          "https://www.saucedemo.com/inventory.html: img testId=\"inventory-item-sauce-labs-bike-light-img\" class=\"inventory_item_img\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Bike LightA red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included.$9.99Add to cart\" testId=\"inventory-item-description\" class=\"inventory_item_description\"",
+          "https://www.saucedemo.com/inventory.html: a text=\"Sauce Labs Bike Light\" testId=\"item-0-title-link\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"Sauce Labs Bike Light\" testId=\"inventory-item-name\" class=\"inventory_item_name \"",
+          "https://www.saucedemo.com/inventory.html: div text=\"A red light isn't the desired state in testing but it sure helps when riding your bike at night. Water-resistant with 3 lighting modes, 1 AAA battery included.\" testId=\"inventory-item-desc\" class=\"inventory_item_desc\"",
+          "https://www.saucedemo.com/inventory.html: div text=\"$9.99\" testId=\"inventory-item-price\" class=\"inventory_item_price\""
+        ]
+      },
+      {
+        "capability": "search",
+        "detected": false,
+        "status": "NOT_DETECTED_ON_INSPECTED_PAGES",
+        "evidence": []
+      },
+      {
+        "capability": "pagination",
+        "detected": false,
+        "status": "NOT_DETECTED_ON_INSPECTED_PAGES",
+        "evidence": []
+      },
+      {
+        "capability": "forms",
+        "detected": true,
+        "status": "POTENTIAL_CONTROLS_FOUND",
+        "evidence": [
+          "https://www.saucedemo.com/: form",
+          "https://www.saucedemo.com/: input name=\"login-button\" testId=\"login-button\" class=\"submit-button btn_action\"",
+          "https://www.saucedemo.com/: 1 form element(s) detected."
+        ]
+      },
+      {
+        "capability": "navigation",
+        "detected": true,
+        "status": "POTENTIAL_CONTROLS_FOUND",
+        "evidence": [
+          "https://www.saucedemo.com/inventory.html: button text=\"Open Menu\"",
+          "https://www.saucedemo.com/inventory.html: img testId=\"open-menu\" class=\"bm-icon\"",
+          "https://www.saucedemo.com/inventory.html: 20 link(s) detected."
+        ]
+      }
+    ],
     "searchRelatedElementsFound": 0,
     "searchRelatedElements": [],
-    "conclusion": "No search-related controls were identified on the inspected page. This does not prove the application lacks the capability."
+    "conclusion": "No search-related controls were identified on the inspected pages. This does not prove the application lacks the capability."
   },
   "limitations": [
-    "Only the initial page and resulting page were inspected; other application routes were not crawled.",
-    "Search behavior and results were not tested during discovery.",
-    "A login success is an initial heuristic and should be confirmed using application-specific evidence."
+    "A maximum of 10 pages were inspected.",
+    "Only visible same-domain anchor links were followed during route discovery.",
+    "External links and potentially transactional links were skipped.",
+    "Buttons were not clicked and forms were not submitted, except for the configured login form.",
+    "Discovery identifies potential controls and page evidence; it does not prove that a capability works.",
+    "Search, filtering, sorting, pagination, cart, and checkout behavior were not executed during discovery.",
+    "Some routes may require menu interactions, application-specific state, or other navigation triggers that this crawler does not perform.",
+    "Login success is based on an initial heuristic and should be confirmed using application-specific evidence.",
+    "A capability not detected on inspected pages may still exist on another route or application state."
   ]
 }

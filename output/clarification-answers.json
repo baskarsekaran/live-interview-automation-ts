@@ -1,9 +1,16 @@
 {
-  "mode": "CI_APPROVED_ANSWERS",
+  "mode": "INTERACTIVE_HUMAN",
+  "requirement": "The user should be able to search for a product.\n\nWhen the user enters a valid product search term, matching products should be displayed.\n\nSearch should be case-insensitive and support partial matching.\n\nSearch should check both product name and product description.\n\nDisplay 10 products per page when multiple products match.\n\nWhen the user searches for a product that does not exist, display:\n\"No products found\".",
+  "questions": [
+    "How should pagination be presented in the UI, and is there a way to change the items per page?",
+    "What is the default sorting order when multiple products match the search term?",
+    "What happens when a user submits an empty search query or a query containing only spaces?",
+    "Are special characters (like symbols, accents) sanitized or ignored during search?"
+  ],
   "answers": [
-    "Username and password do not match any user in this service",
-    "The login button remains enabled. When the user clicks it with either the username or password empty, the application displays a mandatory-field validation error.",
-    "No. There are no specific password complexity requirements such as minimum length, special characters, numbers, or uppercase/lowercase rules specified for this test. Password complexity testing is out of scope.",
-    "No. There is no account lockout or rate-limiting mechanism after multiple failed login attempts. Account lockout testing is out of scope."
+    "Display pagination controls below the product results, with Previous and Next buttons and the current page number. Show 10 products per page by default. The page size should remain fixed at 10; users do not need an option to change the number of items per page.",
+    "Preserve the application's existing default product order. Do not introduce a new sorting rule for search results.",
+    "Trim leading and trailing spaces before processing the search. If the search query is empty or contains only spaces, do not perform a search and do not display \"No products found\". Keep the complete product list visible in its existing default order.",
+    "Special characters, symbols, and accented characters should be treated as normal search text, not removed or ignored. Search should handle them safely and case-insensitively where applicable. The search must not cause errors, expose data, or execute user input as code or a database query."
   ]
 }
