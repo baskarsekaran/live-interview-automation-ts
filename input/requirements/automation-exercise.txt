@@ -1,0 +1,9 @@
+Validate the e-commerce shopping and checkout workflow.
+
+The user should be able to browse products, add products to the shopping cart, review product names, quantities, prices and the order total, and proceed through the checkout workflow.
+
+Before placing an order, the application should allow the user to review the delivery and billing information and the order summary. The user should be able to enter the required payment details and submit the order.
+
+After a successful order, the application should display a confirmation and make an invoice available when that capability is supported.
+
+Use test data only. Do not use real payment card details.
