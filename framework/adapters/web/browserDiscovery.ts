@@ -123,7 +123,7 @@ export async function discoverWebApplication(config: ApplicationConfig, requirem
         // Diversify discovery: do not let many records of the same route pattern
         // consume the page budget before primary workflow pages are inspected.
         const routePattern = (url: string) =>
-          new URL(url).pathname.toLowerCase().replace(/\\d+/g, ":id").replace(/\\/+$/, "") || "/";
+          new URL(url).pathname.toLowerCase().replace(/\d+/g, ":id").replace(/\/+$/, "") || "/";
         const routeCounts = new Map<string, number>();
         for (const discovered of pages) {
           const pattern = routePattern(discovered.url);
@@ -134,7 +134,7 @@ export async function discoverWebApplication(config: ApplicationConfig, requirem
         for (const candidate of queue) {
           const pattern = routePattern(candidate.url);
           const totalForPattern = (routeCounts.get(pattern) ?? 0) + (queueCounts.get(pattern) ?? 0);
-          const isPrimaryWorkflowPage = /\\/(products|view_cart|cart)(?:\\/|$)/i.test(new URL(candidate.url).pathname);
+          const isPrimaryWorkflowPage = /\/(products|view_cart|cart)(?:\/|$)/i.test(new URL(candidate.url).pathname);
           const maxPerPattern = isPrimaryWorkflowPage ? 4 : 2;
           if (totalForPattern >= maxPerPattern) continue;
           queueCounts.set(pattern, (queueCounts.get(pattern) ?? 0) + 1);
@@ -148,10 +148,10 @@ export async function discoverWebApplication(config: ApplicationConfig, requirem
         queue.sort((a, b) => {
           const priority = (url: string) => {
             const pathname = new URL(url).pathname.toLowerCase();
-            if (/\\/(view_cart|cart)(?:\\/|$)/.test(pathname)) return 200;
-            if (/\\/products(?:\\/|$)/.test(pathname)) return 180;
-            if (/\\/product_details\\//.test(pathname)) return 60;
-            if (/\\/(category_products|brand_products)\\//.test(pathname)) return 20;
+            if (/\/(view_cart|cart)(?:\/|$)/.test(pathname)) return 200;
+            if (/\/products(?:\/|$)/.test(pathname)) return 180;
+            if (/\/product_details\//.test(pathname)) return 60;
+            if (/\/(category_products|brand_products)\//.test(pathname)) return 20;
             return 100;
           };
           return priority(b.url) - priority(a.url);
