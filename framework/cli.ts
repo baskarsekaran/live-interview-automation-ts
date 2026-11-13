@@ -59,9 +59,11 @@ async function main(): Promise<void> {
   const blockedCount = plans.length - readyCount;
   console.log(`Executable plans: ${readyCount}; blocked plans: ${blockedCount}`);
 
-  const specPath = path.join(options.outputDir, "generated-tests.spec.ts");
+  const generatedTestDir = path.join(process.cwd(), "tests", "generated-framework");
+  fs.mkdirSync(generatedTestDir, { recursive: true });
+  const specPath = path.join(generatedTestDir, `${options.appId}.spec.ts`);
   fs.writeFileSync(specPath, buildGeneratedSpec(), "utf8");
-  console.log("Generated Playwright spec: generated-tests.spec.ts");
+  console.log(`Generated Playwright spec: ${path.relative(process.cwd(), specPath)}`);
 
   const reviewRequired = analysis.quality !== "COMPLETE" ||
     analysis.clarificationQuestions.length > 0 || analysis.evidenceGaps.length > 0;
@@ -110,7 +112,7 @@ async function main(): Promise<void> {
   console.log("- requirement-analysis.json");
   console.log("- test-scenarios.json");
   console.log("- test-plans.json");
-  console.log("- generated-tests.spec.ts");
+  console.log(`- ${path.relative(process.cwd(), specPath)}`);
   console.log("- automation-gate.json");
   console.log(executeRequested ? "- Playwright execution report (if tests ran)" : "Use --execute to run only READY test plans.");
   if (executeRequested && gate.executionStatus === "FAILED") process.exitCode = Number(gate.executionExitCode) || 1;
