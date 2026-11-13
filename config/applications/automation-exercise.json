@@ -1,0 +1,14 @@
+{
+  "id": "automation-exercise",
+  "name": "Automation Exercise",
+  "type": "web",
+  "baseUrl": "https://www.automationexercise.com",
+  "description": "Public e-commerce practice application for generic web discovery.",
+  "authentication": {
+    "type": "form"
+  },
+  "browser": {
+    "headless": true,
+    "timeoutMs": 20000
+  }
+}
