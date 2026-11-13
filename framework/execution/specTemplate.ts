@@ -15,7 +15,7 @@ const evidence: Evidence[] = discovery.pages.flatMap((page: any) => page.element
 function locatorFor(page: Page, item: Evidence): Locator {
   // Prefer stable, directly discovered attributes over rendered accessible text.
   if (item.elementId) return page.locator("[id=" + JSON.stringify(item.elementId) + "]");
-  if (item.tag === "a" && item.href) return page.locator("a[href=" + JSON.stringify(item.href) + "]");
+  if (item.tag === "a" && item.href) { const hrefPath = new URL(item.href, page.url()).pathname; return page.locator("a[href$=" + JSON.stringify(hrefPath) + "]"); }
   if (item.label) return page.getByLabel(item.label, { exact: true });
   if (item.placeholder) return page.getByPlaceholder(item.placeholder, { exact: true });
   if (item.name) return page.locator("[name=" + JSON.stringify(item.name) + "]");
