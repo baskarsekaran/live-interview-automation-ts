@@ -19,14 +19,10 @@ function locatorFor(page: Page, item: Evidence): Locator {
     const hrefPath = new URL(item.href, page.url()).pathname;
     const hrefLocator = page.locator("a[href$=" + JSON.stringify(hrefPath) + "]");
     // A URL can be shared by multiple links (for example, "Cart" and "View Cart").
-    // Intersect the href with the exact discovered accessible name instead of choosing the first match.
+    // Match the discovered link text exactly, allowing whitespace and nested markup.
     if (item.text) {
-      // Match the exact visible text while tolerating whitespace introduced by icons
-      // and inline markup. Anchors prevent "Cart" from matching "View Cart".
-      const escapedText = item.text.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\    if (item.role !== "generic" && item.text) {
-      return hrefLocator.and(page.getByRole(item.role as any, { name: item.text, exact: true }));
-    }");
-      return hrefLocator.filter({ hasText: new RegExp("^\\s*" + escapedText + "\\s*$") });
+      const escapedText = item.text.trim().replace(/[.*+?^\${}()|[\]\\]/g, "\\\\$&");
+      return hrefLocator.filter({ hasText: new RegExp("^\\\\s*" + escapedText + "\\\\s*$") });
     }
     return hrefLocator;
   }
