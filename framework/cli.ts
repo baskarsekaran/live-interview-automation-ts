@@ -80,11 +80,11 @@ async function main(): Promise<void> {
 
   const reviewRequired = analysis.quality !== "COMPLETE" ||
     analysis.clarificationQuestions.length > 0 || analysis.evidenceGaps.length > 0 ||
-    locatorValidation.status !== "COMPLETED";
+    locatorValidation.status !== "COMPLETED" || blockedCount > 0;
   const gate = {
     status: reviewRequired ? "NEEDS_REVIEW" : "READY_FOR_TEST_EXECUTION",
     reason: reviewRequired
-      ? "Requirement clarification or application evidence review remains necessary. Only individually READY plans can be executed."
+      ? "Requirement clarification, application evidence, or live locator validation requires review. Only individually live-validated READY plans can be executed."
       : "Requirement and application evidence checks passed.",
     clarificationQuestions: analysis.clarificationQuestions,
     evidenceGaps: analysis.evidenceGaps,
