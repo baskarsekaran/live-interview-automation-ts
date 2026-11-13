@@ -9,6 +9,7 @@
     "outDir": "dist"
   },
   "include": [
+    "framework/**/*.ts",
     "pages/**/*.ts",
     "features/**/*.ts",
     "support/**/*.ts",
