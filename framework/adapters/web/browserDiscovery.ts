@@ -120,15 +120,39 @@ export async function discoverWebApplication(config: ApplicationConfig, requirem
             queue.push({ url: nextUrl, depth: current.depth + 1 });
           }
         }
-        // Keep high-value workflow destinations ahead of broad category listings.
+        // Diversify discovery: do not let many records of the same route pattern
+        // consume the page budget before primary workflow pages are inspected.
+        const routePattern = (url: string) =>
+          new URL(url).pathname.toLowerCase().replace(/\\d+/g, ":id").replace(/\\/+$/, "") || "/";
+        const routeCounts = new Map<string, number>();
+        for (const discovered of pages) {
+          const pattern = routePattern(discovered.url);
+          routeCounts.set(pattern, (routeCounts.get(pattern) ?? 0) + 1);
+        }
+        const queueCounts = new Map<string, number>();
+        const diversifiedQueue: typeof queue = [];
+        for (const candidate of queue) {
+          const pattern = routePattern(candidate.url);
+          const totalForPattern = (routeCounts.get(pattern) ?? 0) + (queueCounts.get(pattern) ?? 0);
+          const isPrimaryWorkflowPage = /\\/(products|view_cart|cart)(?:\\/|$)/i.test(new URL(candidate.url).pathname);
+          const maxPerPattern = isPrimaryWorkflowPage ? 4 : 2;
+          if (totalForPattern >= maxPerPattern) continue;
+          queueCounts.set(pattern, (queueCounts.get(pattern) ?? 0) + 1);
+          diversifiedQueue.push(candidate);
+        }
+        queue.length = 0;
+        queue.push(...diversifiedQueue);
+
+        // Rank user-facing workflow destinations above individual product records
+        // and broad category/archive pages.
         queue.sort((a, b) => {
           const priority = (url: string) => {
             const pathname = new URL(url).pathname.toLowerCase();
-            return pathname.includes("/product_details/") ? 100
-              : pathname.includes("/view_cart") ? 70
-              : pathname.includes("/products") ? 30
-              : pathname.includes("/category_products/") || pathname.includes("/brand_products/") ? -20
-              : 0;
+            if (/\\/(view_cart|cart)(?:\\/|$)/.test(pathname)) return 200;
+            if (/\\/products(?:\\/|$)/.test(pathname)) return 180;
+            if (/\\/product_details\\//.test(pathname)) return 60;
+            if (/\\/(category_products|brand_products)\\//.test(pathname)) return 20;
+            return 100;
           };
           return priority(b.url) - priority(a.url);
         });
