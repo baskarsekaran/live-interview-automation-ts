@@ -15,6 +15,13 @@ const evidence = discovery.pages.flatMap((page: any) => page.elements || []);
 async function targetFor(page: Page, id: string): Promise<Locator> {
   const item = evidence.find(item => item.id === id);
   if (!item) throw new Error("Evidence target not found: " + id);
+  if (item.pageUrl) {
+    const expectedPage = new URL(item.pageUrl);
+    const actualPage = new URL(page.url());
+    if (expectedPage.origin !== actualPage.origin || expectedPage.pathname !== actualPage.pathname) {
+      throw new Error("Navigation mismatch for evidence " + id + ": expected " + expectedPage.pathname + " but was " + actualPage.pathname + ". The test plan must navigate through an evidenced link first.");
+    }
+  }
   const locator = locatorFor(page, item);
 
   // Count assertions auto-wait for delayed client-side rendering and still reject duplicates.
