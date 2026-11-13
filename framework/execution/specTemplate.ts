@@ -1,5 +1,5 @@
 export function buildGeneratedSpec(): string {
-  return `import { test, expect, type Page } from "@playwright/test";
+  return `import { test, expect, type Page, type Locator } from "@playwright/test";
 import { locatorFor } from "../../framework/execution/locatorResolver";
 import fs from "node:fs";
 import path from "node:path";
