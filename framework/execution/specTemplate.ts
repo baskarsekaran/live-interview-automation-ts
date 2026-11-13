@@ -15,7 +15,16 @@ const evidence: Evidence[] = discovery.pages.flatMap((page: any) => page.element
 function locatorFor(page: Page, item: Evidence): Locator {
   // Prefer stable, directly discovered attributes over rendered accessible text.
   if (item.elementId) return page.locator("[id=" + JSON.stringify(item.elementId) + "]");
-  if (item.tag === "a" && item.href) { const hrefPath = new URL(item.href, page.url()).pathname; return page.locator("a[href$=" + JSON.stringify(hrefPath) + "]"); }
+  if (item.tag === "a" && item.href) {
+    const hrefPath = new URL(item.href, page.url()).pathname;
+    const hrefLocator = page.locator("a[href$=" + JSON.stringify(hrefPath) + "]");
+    // A URL can be shared by multiple links (for example, "Cart" and "View Cart").
+    // Intersect the href with the exact discovered accessible name instead of choosing the first match.
+    if (item.role !== "generic" && item.text) {
+      return hrefLocator.and(page.getByRole(item.role as any, { name: item.text, exact: true }));
+    }
+    return hrefLocator;
+  }
   if (item.label) return page.getByLabel(item.label, { exact: true });
   if (item.placeholder) return page.getByPlaceholder(item.placeholder, { exact: true });
   if (item.name) return page.locator("[name=" + JSON.stringify(item.name) + "]");
@@ -42,7 +51,16 @@ for (const plan of plans) {
     await expect(page.locator("body")).toBeVisible();
     for (const action of plan.actions) {
       if (action.type === "assertUrl") {
-        await expect(page).toHaveURL(url => url.href.includes(String(action.value)));
+        const expected = String(action.value);
+        const expectedPath = expected.startsWith("http")
+          ? new URL(expected).pathname
+          : new URL(expected, app.baseUrl).pathname;
+        // Poll the normalized pathname. This avoids fragile full-URL/predicate comparisons
+        // across query strings, trailing slashes, and browser-specific URL serialization.
+        await expect.poll(
+          () => new URL(page.url()).pathname,
+          { message: "Expected navigation to " + expectedPath, timeout: 10000 }
+        ).toBe(expectedPath);
         continue;
       }
       const target = await targetFor(page, String(action.targetId));
