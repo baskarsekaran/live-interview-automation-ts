@@ -28,7 +28,7 @@ Schema: [{"scenarioId":"TC001","status":"READY | BLOCKED","reason":"evidence-bas
   const raw = await generateWithGemini(prompt, { temperature: 0, responseMimeType: "application/json" });
   const plans = parseJsonResponse<ScenarioTestPlan[]>(raw);
   if (!Array.isArray(plans) || plans.length !== scenarios.length) throw new Error("Gemini test plans must contain exactly one plan per scenario.");
-  const evidence = new Map<string, DiscoveryElement>(discovery.pages.flatMap(page => page.elements).map(item => [item.id, item]));
+  const evidence = new Map<string, DiscoveryElement>(discovery.pages.flatMap(page => page.elements).map(item => [item.id, item] as const));
   plans.forEach((plan, index) => {
     if (plan.scenarioId !== scenarios[index].id || !["READY","BLOCKED"].includes(plan.status) || typeof plan.reason !== "string" || !Array.isArray(plan.actions)) throw new Error(`Invalid test plan at index ${index}.`);
     if (plan.status === "BLOCKED" && plan.actions.length) throw new Error(`Blocked plan ${plan.scenarioId} cannot contain actions.`);
