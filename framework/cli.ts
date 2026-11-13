@@ -32,8 +32,15 @@ async function main(): Promise<void> {
     discovery = await discoverWebApplication(config);
     fs.writeFileSync(path.join(options.outputDir, "discovery.json"), JSON.stringify(discovery, null, 2), "utf8");
     const page = discovery.pages[0];
-    console.log(`Discovery evidence saved. Page: ${page?.title ?? "(no title)"}`);
-    console.log(`Headings: ${page?.headings.length ?? 0}; links: ${page?.links.length ?? 0}; forms: ${page?.forms.length ?? 0}; interactive elements: ${page?.elements.length ?? 0}`);
+    const totalLinks = discovery.pages.reduce((sum, item) => sum + item.links.length, 0);
+    const totalForms = discovery.pages.reduce((sum, item) => sum + item.forms.length, 0);
+    const totalElements = discovery.pages.reduce((sum, item) => sum + item.elements.length, 0);
+    console.log(`Discovery evidence saved. Pages inspected: ${discovery.pages.length}`);
+    console.log(`Homepage: ${page?.title ?? "(no title)"}`);
+    console.log(`Total links: ${totalLinks}; forms: ${totalForms}; interactive elements: ${totalElements}`);
+    discovery.pages.forEach((item, index) => {
+      console.log(`  ${index + 1}. [depth ${item.depth ?? 0}] ${item.title} - ${item.url}`);
+    });
   } else {
     throw new Error("API-only execution is not supported by this web test-plan milestone. API adapter is a separate milestone.");
   }
