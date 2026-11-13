@@ -42,7 +42,7 @@ for (const plan of plans) {
     await expect(page.locator("body")).toBeVisible();
     for (const action of plan.actions) {
       if (action.type === "assertUrl") {
-        await expect(page).toHaveURL(new RegExp(String(action.value).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")));
+        await expect(page).toHaveURL(url => url.href.includes(String(action.value)));
         continue;
       }
       const target = await targetFor(page, String(action.targetId));
