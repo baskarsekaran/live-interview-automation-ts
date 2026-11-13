@@ -12,7 +12,7 @@ const app = JSON.parse(fs.readFileSync(path.join(__dirname, "application.json"),
 const evidence: Evidence[] = discovery.pages.flatMap((page: any) => page.elements || []);
 
 function locatorFor(page: Page, item: Evidence): Locator {
-  if (item.elementId) return page.locator("#" + item.elementId);
+  if (item.elementId) return page.locator("[id=" + JSON.stringify(item.elementId) + "]");
   if (item.label) return page.getByLabel(item.label, { exact: true });
   if (item.placeholder) return page.getByPlaceholder(item.placeholder, { exact: true });
   if (item.role !== "generic" && item.text) return page.getByRole(item.role as any, { name: item.text, exact: true });
@@ -35,7 +35,7 @@ for (const plan of plans) {
     await page.goto(app.baseUrl, { waitUntil: "domcontentloaded" });
     for (const action of plan.actions) {
       if (action.type === "assertUrl") {
-        await expect(page).toHaveURL(new RegExp(String(action.value).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")));
+        expect(page.url()).toContain(String(action.value));
         continue;
       }
       const target = await targetFor(page, String(action.targetId));
