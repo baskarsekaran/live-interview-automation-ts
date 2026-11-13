@@ -20,8 +20,13 @@ function locatorFor(page: Page, item: Evidence): Locator {
     const hrefLocator = page.locator("a[href$=" + JSON.stringify(hrefPath) + "]");
     // A URL can be shared by multiple links (for example, "Cart" and "View Cart").
     // Intersect the href with the exact discovered accessible name instead of choosing the first match.
-    if (item.role !== "generic" && item.text) {
+    if (item.text) {
+      // Match the exact visible text while tolerating whitespace introduced by icons
+      // and inline markup. Anchors prevent "Cart" from matching "View Cart".
+      const escapedText = item.text.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\    if (item.role !== "generic" && item.text) {
       return hrefLocator.and(page.getByRole(item.role as any, { name: item.text, exact: true }));
+    }");
+      return hrefLocator.filter({ hasText: new RegExp("^\\s*" + escapedText + "\\s*$") });
     }
     return hrefLocator;
   }
