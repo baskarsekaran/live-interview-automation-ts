@@ -2,15 +2,15 @@ export function buildGeneratedSpec(): string {
   return `import { test, expect, type Page, type Locator } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
-
 type Evidence = { id: string; role: string; text: string; label: string; placeholder: string; inputType: string; name: string; elementId: string; href: string };
 type Action = { type: string; targetId?: string; value?: string };
 type Plan = { scenarioId: string; status: "READY" | "BLOCKED"; reason: string; actions: Action[] };
-const discovery = JSON.parse(fs.readFileSync(path.join(__dirname, "discovery.json"), "utf8"));
-const plans: Plan[] = JSON.parse(fs.readFileSync(path.join(__dirname, "test-plans.json"), "utf8"));
-const app = JSON.parse(fs.readFileSync(path.join(__dirname, "application.json"), "utf8"));
+const outputDir = process.env.QA_OUTPUT_DIR;
+if (!outputDir) throw new Error("QA_OUTPUT_DIR must point to the selected application's generated artifacts.");
+const discovery = JSON.parse(fs.readFileSync(path.join(outputDir, "discovery.json"), "utf8"));
+const plans: Plan[] = JSON.parse(fs.readFileSync(path.join(outputDir, "test-plans.json"), "utf8"));
+const app = JSON.parse(fs.readFileSync(path.join(outputDir, "application.json"), "utf8"));
 const evidence: Evidence[] = discovery.pages.flatMap((page: any) => page.elements || []);
-
 function locatorFor(page: Page, item: Evidence): Locator {
   if (item.elementId) return page.locator("[id=" + JSON.stringify(item.elementId) + "]");
   if (item.label) return page.getByLabel(item.label, { exact: true });
