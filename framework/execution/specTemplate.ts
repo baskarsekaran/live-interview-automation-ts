@@ -48,7 +48,7 @@ async function targetFor(page: Page, id: string): Promise<Locator> {
 for (const plan of plans) {
   test(plan.scenarioId + " - " + plan.status, async ({ page }) => {
     test.skip(plan.status !== "READY", plan.reason || "Insufficient UI evidence.");
-    await page.goto(app.baseUrl, { waitUntil: "load" });
+    await page.goto(app.baseUrl, { waitUntil: "domcontentloaded", timeout: 45000 });
     await expect(page.locator("body")).toBeVisible();
     for (const action of plan.actions) {
       if (action.type === "assertUrl") {
