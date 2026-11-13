@@ -6,7 +6,8 @@
   "scripts": {
     "test": "playwright test",
     "bdd": "cucumber-js features --require-module ts-node/register --require features/step-definitions/**/*.ts --require support/hooks.ts --format html:reports/cucumber-report.html",
-    "ai:test": "ts-node agents/qaPipelineAgent.ts"
+    "ai:test": "ts-node agents/qaPipelineAgent.ts",
+    "framework": "ts-node framework/cli.ts"
   },
   "keywords": [],
   "author": "",
