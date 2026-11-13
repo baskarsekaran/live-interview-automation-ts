@@ -18,7 +18,7 @@ async function main(): Promise<void> {
   if (!requirement) throw new Error("Requirement file is empty.");
   fs.mkdirSync(options.outputDir, { recursive: true });
 
-  console.log("\\nGENERIC AI QA FRAMEWORK");
+  console.log("\nGENERIC AI QA FRAMEWORK");
   console.log("=======================");
   console.log(`Application: ${config.name} (${config.type})`);
   console.log(`Base URL: ${config.baseUrl}`);
@@ -27,7 +27,7 @@ async function main(): Promise<void> {
 
   let discovery;
   if (config.type === "web" || config.type === "hybrid") {
-    console.log("\\nSTEP 1: Discovering application...");
+    console.log("\nSTEP 1: Discovering application...");
     discovery = await discoverWebApplication(config);
     fs.writeFileSync(path.join(options.outputDir, "discovery.json"), JSON.stringify(discovery, null, 2), "utf8");
     const page = discovery.pages[0];
@@ -37,7 +37,7 @@ async function main(): Promise<void> {
     throw new Error("API-only execution is not supported by this web test-plan milestone. API adapter is a separate milestone.");
   }
 
-  console.log("\\nSTEP 2: Gemini requirement analysis...");
+  console.log("\nSTEP 2: Gemini requirement analysis...");
   const analysis = await analyzeRequirement(requirement, config, discovery);
   fs.writeFileSync(path.join(options.outputDir, "requirement-analysis.json"), JSON.stringify(analysis, null, 2), "utf8");
   console.log(`Requirement quality: ${analysis.quality}`);
@@ -46,12 +46,12 @@ async function main(): Promise<void> {
   console.log(`Clarification questions: ${analysis.clarificationQuestions.length}`);
   console.log(`Evidence gaps: ${analysis.evidenceGaps.length}`);
 
-  console.log("\\nSTEP 3: Gemini test scenario generation...");
+  console.log("\nSTEP 3: Gemini test scenario generation...");
   const scenarios = await generateScenarios(requirement, config, analysis);
   fs.writeFileSync(path.join(options.outputDir, "test-scenarios.json"), JSON.stringify(scenarios, null, 2), "utf8");
   console.log(`Scenarios generated: ${scenarios.length}`);
 
-  console.log("\\nSTEP 4: Evidence-based Playwright test planning...");
+  console.log("\nSTEP 4: Evidence-based Playwright test planning...");
   const plans = await generateTestPlans(config, scenarios, discovery);
   fs.writeFileSync(path.join(options.outputDir, "test-plans.json"), JSON.stringify(plans, null, 2), "utf8");
   fs.writeFileSync(path.join(options.outputDir, "application.json"), JSON.stringify(config, null, 2), "utf8");
@@ -76,27 +76,28 @@ async function main(): Promise<void> {
     readyPlanCount: readyCount,
     blockedPlanCount: blockedCount,
     executionRequested: executeRequested,
-    executionStatus: executeRequested ? "PENDING" : "NOT_RUN",\n    executionExitCode: null as number | null
+    executionStatus: executeRequested ? "PENDING" : "NOT_RUN",
+    executionExitCode: null as number | null
   };
   fs.writeFileSync(path.join(options.outputDir, "automation-gate.json"), JSON.stringify(gate, null, 2), "utf8");
 
-  console.log("\\nSTEP 5: Automation readiness gate");
+  console.log("\nSTEP 5: Automation readiness gate");
   console.log(`Status: ${gate.status}`);
   if (gate.clarificationQuestions.length) {
-    console.log("\\nClarification questions:");
+    console.log("\nClarification questions:");
     gate.clarificationQuestions.forEach((question, index) => console.log(`${index + 1}. ${question}`));
   }
   if (gate.evidenceGaps.length) {
-    console.log("\\nApplication evidence gaps:");
+    console.log("\nApplication evidence gaps:");
     gate.evidenceGaps.forEach(gap => console.log(`- ${gap}`));
   }
 
   if (executeRequested) {
     if (readyCount === 0) {
       gate.executionStatus = "SKIPPED_NO_READY_TESTS";
-      console.log("\\nExecution skipped: no scenario passed evidence validation.");
+      console.log("\nExecution skipped: no scenario passed evidence validation.");
     } else {
-      console.log("\\nSTEP 6: Executing evidence-approved Playwright tests...");
+      console.log("\nSTEP 6: Executing evidence-approved Playwright tests...");
       const exitCode = executeGeneratedTests(specPath, options.outputDir);
       gate.executionStatus = exitCode === 0 ? "COMPLETED" : "FAILED";
       gate.executionExitCode = exitCode;
@@ -104,7 +105,7 @@ async function main(): Promise<void> {
     fs.writeFileSync(path.join(options.outputDir, "automation-gate.json"), JSON.stringify(gate, null, 2), "utf8");
   }
 
-  console.log("\\nArtifacts:");
+  console.log("\nArtifacts:");
   console.log("- discovery.json");
   console.log("- requirement-analysis.json");
   console.log("- test-scenarios.json");
@@ -116,7 +117,7 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error("\\nGENERIC AI QA FRAMEWORK FAILED");
+  console.error("\nGENERIC AI QA FRAMEWORK FAILED");
   console.error(error instanceof Error ? error.message : error);
   process.exitCode = 1;
 });
