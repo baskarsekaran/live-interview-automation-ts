@@ -22,3 +22,5 @@ test-results/
 /output/ai-test-report.json
 /output/requirement-analysis.json
 /output/test-scenarios.json
+# Generated generic QA framework Playwright specs
+/tests/generated-framework/
