@@ -69,7 +69,7 @@ async function capturePage(page: Page, pageUrl: string, depth: number, nextId: (
   };
 }
 
-export async function discoverWebApplication(config: ApplicationConfig): Promise<DiscoveryEvidence> {
+export async function discoverWebApplication(config: ApplicationConfig, requirement = ""): Promise<DiscoveryEvidence> {
   const browser = await chromium.launch({ headless: config.browser?.headless ?? true });
   const maxPages = Math.max(1, Math.min(config.discovery?.maxPages ?? 8, 20));
   const maxDepth = Math.max(0, Math.min(config.discovery?.maxDepth ?? 2, 4));
@@ -95,9 +95,19 @@ export async function discoverWebApplication(config: ApplicationConfig): Promise
         const captured = await capturePage(page, finalUrl, current.depth, nextId);
         pages.push(captured);
         if (current.depth >= maxDepth) continue;
-        for (const link of captured.links) {
-          if (!isSafeInternalLink(link.href, base.origin)) continue;
-          const nextUrl = normalizeUrl(link.href);
+        const requirementTerms = new Set(
+          requirement.toLowerCase().match(/[a-z0-9]{4,}/g) ?? []
+        );
+        const candidates = captured.links
+          .filter(link => isSafeInternalLink(link.href, base.origin))
+          .map((link, index) => {
+            const searchable = (link.text + " " + new URL(link.href).pathname).toLowerCase();
+            const score = [...requirementTerms].reduce((sum, term) => sum + (searchable.includes(term) ? 1 : 0), 0);
+            return { link, index, score };
+          })
+          .sort((a, b) => b.score - a.score || a.index - b.index);
+        for (const candidate of candidates) {
+          const nextUrl = normalizeUrl(candidate.link.href);
           if (nextUrl && !visited.has(nextUrl) && !queue.some(item => normalizeUrl(item.url) === nextUrl)) {
             queue.push({ url: nextUrl, depth: current.depth + 1 });
           }
