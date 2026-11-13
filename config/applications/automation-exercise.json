@@ -10,5 +10,9 @@
   "browser": {
     "headless": true,
     "timeoutMs": 20000
+  },
+  "discovery": {
+    "maxPages": 10,
+    "maxDepth": 2
   }
 }
