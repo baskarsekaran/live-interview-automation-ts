@@ -29,7 +29,7 @@ async function main(): Promise<void> {
   let discovery;
   if (config.type === "web" || config.type === "hybrid") {
     console.log("\nSTEP 1: Discovering application...");
-    discovery = await discoverWebApplication(config);
+    discovery = await discoverWebApplication(config, requirement);
     fs.writeFileSync(path.join(options.outputDir, "discovery.json"), JSON.stringify(discovery, null, 2), "utf8");
     const page = discovery.pages[0];
     const totalLinks = discovery.pages.reduce((sum, item) => sum + item.links.length, 0);
