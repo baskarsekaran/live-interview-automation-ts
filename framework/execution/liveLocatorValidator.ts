@@ -106,6 +106,16 @@ export async function validateTestPlansLive(
 
         let check: LocatorCheck;
         try {
+          // Validate the target on the exact page where its evidence was captured.
+          const targetPageUrl = item.pageUrl ?? discovery.pages[0]?.url ?? app.baseUrl;
+          if (new URL(page.url()).pathname !== new URL(targetPageUrl).pathname ||
+              new URL(page.url()).origin !== new URL(targetPageUrl).origin) {
+            await page.goto(targetPageUrl, {
+              waitUntil: "domcontentloaded",
+              timeout: app.browser?.timeoutMs ?? 20000
+            });
+            await page.locator("body").waitFor({ state: "visible" });
+          }
           const locator = locatorFor(page, item);
           await locator.first().waitFor({ state: "attached", timeout: 5000 }).catch(() => undefined);
           const matchCount = await locator.count();
