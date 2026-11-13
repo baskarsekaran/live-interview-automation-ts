@@ -12,7 +12,7 @@
     "timeoutMs": 20000
   },
   "discovery": {
-    "maxPages": 10,
+    "maxPages": 15,
     "maxDepth": 2
   }
 }
