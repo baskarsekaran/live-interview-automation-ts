@@ -6,6 +6,7 @@ import { analyzeRequirement } from "./ai/requirementAnalyzer";
 import { generateScenarios } from "./ai/scenarioGenerator";
 import { generateTestPlans } from "./ai/testPlanGenerator";
 import { buildGeneratedSpec } from "./execution/specTemplate";
+import { validateTestPlansLive } from "./execution/liveLocatorValidator";
 import { executeGeneratedTests } from "./execution/playwrightExecutor";
 
 async function main(): Promise<void> {
@@ -52,12 +53,24 @@ async function main(): Promise<void> {
   console.log(`Scenarios generated: ${scenarios.length}`);
 
   console.log("\nSTEP 4: Evidence-based Playwright test planning...");
-  const plans = await generateTestPlans(config, scenarios, discovery);
-  fs.writeFileSync(path.join(options.outputDir, "test-plans.json"), JSON.stringify(plans, null, 2), "utf8");
+  const generatedPlans = await generateTestPlans(config, scenarios, discovery);
+  fs.writeFileSync(path.join(options.outputDir, "test-plans-generated.json"), JSON.stringify(generatedPlans, null, 2), "utf8");
   fs.writeFileSync(path.join(options.outputDir, "application.json"), JSON.stringify(config, null, 2), "utf8");
+  console.log(`AI plans generated: ${generatedPlans.filter(plan => plan.status === "READY").length} READY; ${generatedPlans.filter(plan => plan.status === "BLOCKED").length} BLOCKED`);
+
+  console.log("\nSTEP 5: Live locator validation (read-only)...");
+  const locatorValidation = await validateTestPlansLive(config, discovery, generatedPlans);
+  fs.writeFileSync(path.join(options.outputDir, "locator-validation.json"), JSON.stringify(locatorValidation, null, 2), "utf8");
+  const plans = locatorValidation.plans;
+  fs.writeFileSync(path.join(options.outputDir, "test-plans.json"), JSON.stringify(plans, null, 2), "utf8");
   const readyCount = plans.filter(plan => plan.status === "READY").length;
   const blockedCount = plans.length - readyCount;
-  console.log(`Executable plans: ${readyCount}; blocked plans: ${blockedCount}`);
+  const validatedCount = locatorValidation.scenarios.filter(item => item.status === "VALIDATED").length;
+  console.log(`Live validation: ${locatorValidation.status}; ${validatedCount} scenarios validated`);
+  console.log(`Executable plans after validation: ${readyCount}; blocked plans: ${blockedCount}`);
+  if (locatorValidation.status === "ENVIRONMENT_ERROR") {
+    console.log(`Live validation environment error: ${locatorValidation.message}`);
+  }
 
   const generatedTestDir = path.join(process.cwd(), "tests", "generated-framework");
   fs.mkdirSync(generatedTestDir, { recursive: true });
@@ -66,7 +79,8 @@ async function main(): Promise<void> {
   console.log(`Generated Playwright spec: ${path.relative(process.cwd(), specPath)}`);
 
   const reviewRequired = analysis.quality !== "COMPLETE" ||
-    analysis.clarificationQuestions.length > 0 || analysis.evidenceGaps.length > 0;
+    analysis.clarificationQuestions.length > 0 || analysis.evidenceGaps.length > 0 ||
+    locatorValidation.status !== "COMPLETED";
   const gate = {
     status: reviewRequired ? "NEEDS_REVIEW" : "READY_FOR_TEST_EXECUTION",
     reason: reviewRequired
@@ -77,13 +91,14 @@ async function main(): Promise<void> {
     generatedScenarioCount: scenarios.length,
     readyPlanCount: readyCount,
     blockedPlanCount: blockedCount,
+    locatorValidationStatus: locatorValidation.status,
     executionRequested: executeRequested,
     executionStatus: executeRequested ? "PENDING" : "NOT_RUN",
     executionExitCode: null as number | null
   };
   fs.writeFileSync(path.join(options.outputDir, "automation-gate.json"), JSON.stringify(gate, null, 2), "utf8");
 
-  console.log("\nSTEP 5: Automation readiness gate");
+  console.log("\nSTEP 6: Automation readiness gate");
   console.log(`Status: ${gate.status}`);
   if (gate.clarificationQuestions.length) {
     console.log("\nClarification questions:");
@@ -99,7 +114,7 @@ async function main(): Promise<void> {
       gate.executionStatus = "SKIPPED_NO_READY_TESTS";
       console.log("\nExecution skipped: no scenario passed evidence validation.");
     } else {
-      console.log("\nSTEP 6: Executing evidence-approved Playwright tests...");
+      console.log("\nSTEP 7: Executing live-validated Playwright tests...");
       const exitCode = executeGeneratedTests(specPath, options.outputDir);
       gate.executionStatus = exitCode === 0 ? "COMPLETED" : "FAILED";
       gate.executionExitCode = exitCode;
@@ -111,7 +126,9 @@ async function main(): Promise<void> {
   console.log("- discovery.json");
   console.log("- requirement-analysis.json");
   console.log("- test-scenarios.json");
-  console.log("- test-plans.json");
+  console.log("- test-plans-generated.json");
+  console.log("- locator-validation.json");
+  console.log("- test-plans.json (live-validated)");
   console.log(`- ${path.relative(process.cwd(), specPath)}`);
   console.log("- automation-gate.json");
   console.log(executeRequested ? "- Playwright execution report (if tests ran)" : "Use --execute to run only READY test plans.");
